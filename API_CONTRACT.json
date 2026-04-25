@@ -1,0 +1,812 @@
+{
+  "apiVersion": "1.0",
+  "title": "Smart Expense Splitter API Contract",
+  "description": "Complete REST API specification for Smart Expense Splitter for Groups",
+  "baseUrl": "http://localhost:3000/api",
+  "version": "1.0",
+  "date": "2026-04-19",
+  "status": "Implementation-Ready",
+  "authentication": {
+    "type": "JWT",
+    "scheme": "Bearer {token}",
+    "header": "Authorization",
+    "location": "header"
+  },
+  "responseFormat": {
+    "success": {
+      "status": "success",
+      "data": "endpoint-specific data",
+      "timestamp": "ISO 8601 timestamp"
+    },
+    "error": {
+      "status": "error",
+      "code": "error_code",
+      "message": "Human-readable error message",
+      "details": "optional context-specific details",
+      "timestamp": "ISO 8601 timestamp"
+    }
+  },
+  "httpStatusCodes": {
+    "200": "OK - Successful GET/PATCH",
+    "201": "Created - Successful POST",
+    "204": "No Content - Successful DELETE",
+    "400": "Bad Request - Invalid input data",
+    "401": "Unauthorized - Missing or invalid authentication",
+    "403": "Forbidden - Authenticated but not authorized",
+    "404": "Not Found - Resource does not exist",
+    "409": "Conflict - Resource conflict",
+    "500": "Internal Server Error"
+  },
+  "endpoints": [
+    {
+      "id": "auth-signup",
+      "method": "POST",
+      "path": "/auth/signup",
+      "summary": "Register a new user account",
+      "authentication": false,
+      "requestBody": {
+        "email": {
+          "type": "string",
+          "description": "User email (unique, valid format)",
+          "required": true
+        },
+        "password": {
+          "type": "string",
+          "description": "Password (minimum 8 characters)",
+          "required": true
+        },
+        "name": {
+          "type": "string",
+          "description": "User's full name",
+          "required": true
+        }
+      },
+      "responseBody": {
+        "statusCode": 201,
+        "userId": { "type": "UUID" },
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "token": { "type": "string", "description": "JWT token" },
+        "createdAt": { "type": "ISO 8601 timestamp" }
+      },
+      "errors": [
+        { "code": 400, "message": "Invalid email format or password too short" },
+        { "code": 409, "message": "Email already exists" },
+        { "code": 500, "message": "Database error" }
+      ]
+    },
+    {
+      "id": "auth-login",
+      "method": "POST",
+      "path": "/auth/login",
+      "summary": "Authenticate user and return JWT token",
+      "authentication": false,
+      "requestBody": {
+        "email": { "type": "string", "required": true },
+        "password": { "type": "string", "required": true }
+      },
+      "responseBody": {
+        "statusCode": 200,
+        "userId": { "type": "UUID" },
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "token": { "type": "string", "description": "JWT token" },
+        "expiresIn": { "type": "number", "description": "Seconds until expiration" }
+      },
+      "errors": [
+        { "code": 400, "message": "Missing email or password" },
+        { "code": 401, "message": "Invalid email or password" },
+        { "code": 500, "message": "Database error" }
+      ]
+    },
+    {
+      "id": "auth-refresh",
+      "method": "POST",
+      "path": "/auth/refresh",
+      "summary": "Refresh expired JWT token (optional for MVP)",
+      "authentication": true,
+      "headers": {
+        "Authorization": "Bearer {refresh_token}"
+      },
+      "responseBody": {
+        "statusCode": 200,
+        "token": { "type": "string" },
+        "expiresIn": { "type": "number" }
+      },
+      "errors": [
+        { "code": 401, "message": "Invalid or expired token" }
+      ],
+      "mvpStatus": "NOT_IN_MVP"
+    },
+    {
+      "id": "user-get-profile",
+      "method": "GET",
+      "path": "/users/me",
+      "summary": "Retrieve authenticated user's profile information",
+      "authentication": true,
+      "responseBody": {
+        "statusCode": 200,
+        "userId": { "type": "UUID" },
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "createdAt": { "type": "ISO 8601 timestamp" }
+      },
+      "errors": [
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 404, "message": "User not found" }
+      ]
+    },
+    {
+      "id": "user-update-profile",
+      "method": "PATCH",
+      "path": "/users/{userId}",
+      "summary": "Update user's profile information",
+      "authentication": true,
+      "pathParameters": {
+        "userId": { "type": "UUID", "required": true }
+      },
+      "requestBody": {
+        "name": { "type": "string", "required": false },
+        "email": { "type": "string", "required": false, "description": "Must be unique" }
+      },
+      "responseBody": {
+        "statusCode": 200,
+        "userId": { "type": "UUID" },
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "updatedAt": { "type": "ISO 8601 timestamp" }
+      },
+      "errors": [
+        { "code": 400, "message": "Invalid email format or empty update" },
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 403, "message": "Cannot update another user's profile" },
+        { "code": 404, "message": "User not found" },
+        { "code": 409, "message": "Email already exists" }
+      ]
+    },
+    {
+      "id": "group-create",
+      "method": "POST",
+      "path": "/groups",
+      "summary": "Create a new expense group",
+      "authentication": true,
+      "requestBody": {
+        "name": { "type": "string", "required": true, "description": "e.g., 'Baguio Trip'" },
+        "description": { "type": "string", "required": false }
+      },
+      "responseBody": {
+        "statusCode": 201,
+        "groupId": { "type": "UUID" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "adminId": { "type": "UUID" },
+        "createdAt": { "type": "ISO 8601 timestamp" }
+      },
+      "errors": [
+        { "code": 400, "message": "Missing required fields" },
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 500, "message": "Database error" }
+      ]
+    },
+    {
+      "id": "group-list",
+      "method": "GET",
+      "path": "/groups",
+      "summary": "Retrieve all groups the user is a member of",
+      "authentication": true,
+      "queryParameters": {
+        "limit": { "type": "number", "default": 20, "max": 100 },
+        "offset": { "type": "number", "default": 0 }
+      },
+      "responseBody": {
+        "statusCode": 200,
+        "groups": [
+          {
+            "groupId": { "type": "UUID" },
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "adminId": { "type": "UUID" },
+            "role": { "type": "string", "enum": ["admin", "member"] },
+            "memberCount": { "type": "number" },
+            "createdAt": { "type": "ISO 8601 timestamp" }
+          }
+        ],
+        "total": { "type": "number" },
+        "limit": { "type": "number" },
+        "offset": { "type": "number" }
+      },
+      "errors": [
+        { "code": 401, "message": "Invalid or missing token" }
+      ]
+    },
+    {
+      "id": "group-get",
+      "method": "GET",
+      "path": "/groups/{groupId}",
+      "summary": "Retrieve group information and members",
+      "authentication": true,
+      "pathParameters": {
+        "groupId": { "type": "UUID", "required": true }
+      },
+      "responseBody": {
+        "statusCode": 200,
+        "groupId": { "type": "UUID" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "adminId": { "type": "UUID" },
+        "members": [
+          {
+            "userId": { "type": "UUID" },
+            "name": { "type": "string" },
+            "email": { "type": "string" },
+            "role": { "type": "string", "enum": ["admin", "member"] },
+            "joinedAt": { "type": "ISO 8601 timestamp" }
+          }
+        ],
+        "createdAt": { "type": "ISO 8601 timestamp" }
+      },
+      "errors": [
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 403, "message": "User is not a member of this group" },
+        { "code": 404, "message": "Group not found" }
+      ]
+    },
+    {
+      "id": "group-update",
+      "method": "PATCH",
+      "path": "/groups/{groupId}",
+      "summary": "Update group details (admin only)",
+      "authentication": true,
+      "pathParameters": {
+        "groupId": { "type": "UUID", "required": true }
+      },
+      "requestBody": {
+        "name": { "type": "string", "required": false },
+        "description": { "type": "string", "required": false }
+      },
+      "responseBody": {
+        "statusCode": 200,
+        "groupId": { "type": "UUID" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "updatedAt": { "type": "ISO 8601 timestamp" }
+      },
+      "errors": [
+        { "code": 400, "message": "Invalid update payload" },
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 403, "message": "User is not admin of this group" },
+        { "code": 404, "message": "Group not found" }
+      ]
+    },
+    {
+      "id": "group-delete",
+      "method": "DELETE",
+      "path": "/groups/{groupId}",
+      "summary": "Delete a group and all associated data (admin only)",
+      "authentication": true,
+      "pathParameters": {
+        "groupId": { "type": "UUID", "required": true }
+      },
+      "responseBody": {
+        "statusCode": 204
+      },
+      "errors": [
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 403, "message": "User is not admin of this group" },
+        { "code": 404, "message": "Group not found" }
+      ]
+    },
+    {
+      "id": "member-add",
+      "method": "POST",
+      "path": "/groups/{groupId}/members",
+      "summary": "Invite or add a user to a group (admin only)",
+      "authentication": true,
+      "pathParameters": {
+        "groupId": { "type": "UUID", "required": true }
+      },
+      "requestBody": {
+        "email": { "type": "string", "required": true, "description": "User email or userId" }
+      },
+      "responseBody": {
+        "statusCode": 201,
+        "userId": { "type": "UUID" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["member"] },
+        "joinedAt": { "type": "ISO 8601 timestamp" }
+      },
+      "errors": [
+        { "code": 400, "message": "Invalid email or user not found" },
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 403, "message": "User is not admin of this group" },
+        { "code": 404, "message": "Group not found" },
+        { "code": 409, "message": "User is already a member of this group" }
+      ]
+    },
+    {
+      "id": "member-remove",
+      "method": "DELETE",
+      "path": "/groups/{groupId}/members/{userId}",
+      "summary": "Remove a user from a group (admin only)",
+      "authentication": true,
+      "pathParameters": {
+        "groupId": { "type": "UUID", "required": true },
+        "userId": { "type": "UUID", "required": true }
+      },
+      "responseBody": {
+        "statusCode": 204
+      },
+      "errors": [
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 403, "message": "User is not admin of this group" },
+        { "code": 404, "message": "Group or member not found" }
+      ]
+    },
+    {
+      "id": "member-list",
+      "method": "GET",
+      "path": "/groups/{groupId}/members",
+      "summary": "Get all members of a group with current balances",
+      "authentication": true,
+      "pathParameters": {
+        "groupId": { "type": "UUID", "required": true }
+      },
+      "responseBody": {
+        "statusCode": 200,
+        "members": [
+          {
+            "userId": { "type": "UUID" },
+            "name": { "type": "string" },
+            "email": { "type": "string" },
+            "role": { "type": "string", "enum": ["admin", "member"] },
+            "balance": { "type": "number", "description": "Positive = owes, Negative = receives" },
+            "joinedAt": { "type": "ISO 8601 timestamp" }
+          }
+        ]
+      },
+      "errors": [
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 403, "message": "User is not a member of this group" },
+        { "code": 404, "message": "Group not found" }
+      ]
+    },
+    {
+      "id": "expense-create",
+      "method": "POST",
+      "path": "/groups/{groupId}/expenses",
+      "summary": "Create a new shared expense and calculate splits",
+      "authentication": true,
+      "pathParameters": {
+        "groupId": { "type": "UUID", "required": true }
+      },
+      "requestBody": {
+        "description": { "type": "string", "required": true, "description": "e.g., 'Hotel booking'" },
+        "amount": { "type": "number", "required": true, "description": "Positive decimal" },
+        "splitType": { "type": "string", "required": true, "enum": ["equal", "manual"] },
+        "memberSplits": {
+          "type": "array",
+          "items": {
+            "userId": { "type": "UUID", "required": true },
+            "amount": { "type": "number", "description": "For manual splits only" }
+          }
+        }
+      },
+      "responseBody": {
+        "statusCode": 201,
+        "expenseId": { "type": "UUID" },
+        "groupId": { "type": "UUID" },
+        "description": { "type": "string" },
+        "amount": { "type": "number" },
+        "createdBy": { "type": "UUID" },
+        "createdAt": { "type": "ISO 8601 timestamp" },
+        "splits": [
+          {
+            "splitId": { "type": "UUID" },
+            "userId": { "type": "UUID" },
+            "assignedAmount": { "type": "number" }
+          }
+        ]
+      },
+      "errors": [
+        { "code": 400, "message": "Invalid amount, missing fields, or invalid split data" },
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 403, "message": "User is not a member of this group" },
+        { "code": 404, "message": "Group or member not found" }
+      ]
+    },
+    {
+      "id": "expense-list",
+      "method": "GET",
+      "path": "/groups/{groupId}/expenses",
+      "summary": "Retrieve all expenses for a group",
+      "authentication": true,
+      "pathParameters": {
+        "groupId": { "type": "UUID", "required": true }
+      },
+      "queryParameters": {
+        "limit": { "type": "number", "default": 50 },
+        "offset": { "type": "number", "default": 0 },
+        "sortBy": { "type": "string", "enum": ["date", "amount"], "default": "date" }
+      },
+      "responseBody": {
+        "statusCode": 200,
+        "expenses": [
+          {
+            "expenseId": { "type": "UUID" },
+            "description": { "type": "string" },
+            "amount": { "type": "number" },
+            "createdBy": { "type": "UUID" },
+            "createdByName": { "type": "string" },
+            "createdAt": { "type": "ISO 8601 timestamp" },
+            "splits": [
+              {
+                "splitId": { "type": "UUID" },
+                "userId": { "type": "UUID" },
+                "userName": { "type": "string" },
+                "assignedAmount": { "type": "number" }
+              }
+            ]
+          }
+        ],
+        "total": { "type": "number" },
+        "limit": { "type": "number" },
+        "offset": { "type": "number" }
+      },
+      "errors": [
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 403, "message": "User is not a member of this group" },
+        { "code": 404, "message": "Group not found" }
+      ]
+    },
+    {
+      "id": "expense-get",
+      "method": "GET",
+      "path": "/groups/{groupId}/expenses/{expenseId}",
+      "summary": "Retrieve specific expense details",
+      "authentication": true,
+      "pathParameters": {
+        "groupId": { "type": "UUID", "required": true },
+        "expenseId": { "type": "UUID", "required": true }
+      },
+      "responseBody": {
+        "statusCode": 200,
+        "expenseId": { "type": "UUID" },
+        "groupId": { "type": "UUID" },
+        "description": { "type": "string" },
+        "amount": { "type": "number" },
+        "createdBy": { "type": "UUID" },
+        "createdByName": { "type": "string" },
+        "createdAt": { "type": "ISO 8601 timestamp" },
+        "splits": [
+          {
+            "splitId": { "type": "UUID" },
+            "userId": { "type": "UUID" },
+            "userName": { "type": "string" },
+            "assignedAmount": { "type": "number" },
+            "paymentStatus": { "type": "string", "enum": ["pending", "completed"] }
+          }
+        ]
+      },
+      "errors": [
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 403, "message": "User is not a member of this group" },
+        { "code": 404, "message": "Group or expense not found" }
+      ]
+    },
+    {
+      "id": "payment-mark-completed",
+      "method": "PATCH",
+      "path": "/groups/{groupId}/expenses/{expenseId}/splits/{splitId}/payment",
+      "summary": "Mark a split as paid by the member owing it",
+      "authentication": true,
+      "pathParameters": {
+        "groupId": { "type": "UUID", "required": true },
+        "expenseId": { "type": "UUID", "required": true },
+        "splitId": { "type": "UUID", "required": true }
+      },
+      "requestBody": {
+        "status": { "type": "string", "required": true, "enum": ["completed"] }
+      },
+      "responseBody": {
+        "statusCode": 200,
+        "splitId": { "type": "UUID" },
+        "expenseId": { "type": "UUID" },
+        "userId": { "type": "UUID" },
+        "assignedAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["completed"] },
+        "paidAt": { "type": "ISO 8601 timestamp" }
+      },
+      "errors": [
+        { "code": 400, "message": "Invalid status value" },
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 403, "message": "User cannot mark payment for another member (unless admin)" },
+        { "code": 404, "message": "Split not found" }
+      ]
+    },
+    {
+      "id": "balance-get",
+      "method": "GET",
+      "path": "/groups/{groupId}/balance",
+      "summary": "Get current user's balance in a group",
+      "authentication": true,
+      "pathParameters": {
+        "groupId": { "type": "UUID", "required": true }
+      },
+      "responseBody": {
+        "statusCode": 200,
+        "userId": { "type": "UUID" },
+        "groupId": { "type": "UUID" },
+        "totalOwes": { "type": "number", "description": "Positive amount user owes" },
+        "totalReceives": { "type": "number", "description": "Positive amount group owes to user" },
+        "netBalance": { "type": "number", "description": "Owes - receives (positive = owes, negative = owed)" },
+        "lastUpdated": { "type": "ISO 8601 timestamp" }
+      },
+      "errors": [
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 403, "message": "User is not a member of this group" },
+        { "code": 404, "message": "Group not found" }
+      ]
+    },
+    {
+      "id": "settlement-get",
+      "method": "GET",
+      "path": "/groups/{groupId}/settlement",
+      "summary": "Get complete settlement/payment status for all members",
+      "authentication": true,
+      "pathParameters": {
+        "groupId": { "type": "UUID", "required": true }
+      },
+      "responseBody": {
+        "statusCode": 200,
+        "groupId": { "type": "UUID" },
+        "totalGroupExpenses": { "type": "number" },
+        "members": [
+          {
+            "userId": { "type": "UUID" },
+            "name": { "type": "string" },
+            "totalOwes": { "type": "number" },
+            "totalReceives": { "type": "number" },
+            "pendingPayments": { "type": "number" },
+            "completedPayments": { "type": "number" }
+          }
+        ]
+      },
+      "errors": [
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 403, "message": "User is not a member of this group" },
+        { "code": 404, "message": "Group not found" }
+      ]
+    },
+    {
+      "id": "accountability-history",
+      "method": "GET",
+      "path": "/groups/{groupId}/members/{userId}/history",
+      "summary": "Retrieve payment history for reliability tracking",
+      "authentication": true,
+      "pathParameters": {
+        "groupId": { "type": "UUID", "required": true },
+        "userId": { "type": "UUID", "required": true }
+      },
+      "queryParameters": {
+        "limit": { "type": "number", "default": 30 },
+        "offset": { "type": "number", "default": 0 }
+      },
+      "responseBody": {
+        "statusCode": 200,
+        "userId": { "type": "UUID" },
+        "userName": { "type": "string" },
+        "paymentHistory": [
+          {
+            "paymentHistoryId": { "type": "UUID" },
+            "expenseId": { "type": "UUID" },
+            "expenseDescription": { "type": "string" },
+            "assignedAmount": { "type": "number" },
+            "status": { "type": "string", "enum": ["completed", "pending"] },
+            "createdAt": { "type": "ISO 8601 timestamp" },
+            "completedAt": { "type": "ISO 8601 timestamp" },
+            "daysOverdue": { "type": "number" }
+          }
+        ],
+        "reliabilityIndicator": { "type": "string", "enum": ["Reliable", "At Risk", "Unreliable"] }
+      },
+      "errors": [
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 403, "message": "User is not admin or member viewing own history" },
+        { "code": 404, "message": "Group or member not found" }
+      ]
+    },
+    {
+      "id": "accountability-overdue",
+      "method": "GET",
+      "path": "/groups/{groupId}/overdue",
+      "summary": "Highlight overdue payments in a group",
+      "authentication": true,
+      "pathParameters": {
+        "groupId": { "type": "UUID", "required": true }
+      },
+      "queryParameters": {
+        "overdueAfterDays": { "type": "number", "default": 7 }
+      },
+      "responseBody": {
+        "statusCode": 200,
+        "groupId": { "type": "UUID" },
+        "overdueThreshold": { "type": "number" },
+        "overdueMembers": [
+          {
+            "userId": { "type": "UUID" },
+            "name": { "type": "string" },
+            "totalOverdueAmount": { "type": "number" },
+            "overdueSplits": [
+              {
+                "splitId": { "type": "UUID" },
+                "expenseDescription": { "type": "string" },
+                "amount": { "type": "number" },
+                "createdAt": { "type": "ISO 8601 timestamp" },
+                "daysOverdue": { "type": "number" }
+              }
+            ]
+          }
+        ]
+      },
+      "errors": [
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 403, "message": "User is not a member of this group" },
+        { "code": 404, "message": "Group not found" }
+      ]
+    },
+    {
+      "id": "accountability-reliability",
+      "method": "GET",
+      "path": "/groups/{groupId}/members/{userId}/reliability",
+      "summary": "Get calculated reliability score for a member",
+      "authentication": true,
+      "pathParameters": {
+        "groupId": { "type": "UUID", "required": true },
+        "userId": { "type": "UUID", "required": true }
+      },
+      "responseBody": {
+        "statusCode": 200,
+        "userId": { "type": "UUID" },
+        "name": { "type": "string" },
+        "indicator": { "type": "string", "enum": ["Reliable", "At Risk", "Unreliable"] },
+        "score": { "type": "number", "description": "0-100, for future expansion" },
+        "metrics": {
+          "totalPayments": { "type": "number" },
+          "completedOnTime": { "type": "number" },
+          "completedLate": { "type": "number" },
+          "stillPending": { "type": "number" },
+          "completionRate": { "type": "number" }
+        },
+        "calculatedAt": { "type": "ISO 8601 timestamp" }
+      },
+      "errors": [
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 403, "message": "User is not a member of this group" },
+        { "code": 404, "message": "Group or member not found" }
+      ]
+    },
+    {
+      "id": "dashboard-get",
+      "method": "GET",
+      "path": "/groups/{groupId}/dashboard",
+      "summary": "Retrieve complete group dashboard data (all summaries)",
+      "authentication": true,
+      "pathParameters": {
+        "groupId": { "type": "UUID", "required": true }
+      },
+      "responseBody": {
+        "statusCode": 200,
+        "groupId": { "type": "UUID" },
+        "groupName": { "type": "string" },
+        "groupAdmin": { "type": "string" },
+        "memberCount": { "type": "number" },
+        "expenseCount": { "type": "number" },
+        "totalExpenses": { "type": "number" },
+        "memberBalances": [
+          {
+            "userId": { "type": "UUID" },
+            "name": { "type": "string" },
+            "role": { "type": "string", "enum": ["admin", "member"] },
+            "totalOwes": { "type": "number" },
+            "totalReceives": { "type": "number" },
+            "pendingPayments": { "type": "number" },
+            "reliabilityIndicator": { "type": "string" }
+          }
+        ],
+        "recentExpenses": [
+          {
+            "expenseId": { "type": "UUID" },
+            "description": { "type": "string" },
+            "amount": { "type": "number" },
+            "createdBy": { "type": "string" },
+            "createdAt": { "type": "ISO 8601 timestamp" }
+          }
+        ],
+        "overdueAlerts": [
+          {
+            "userId": { "type": "UUID" },
+            "name": { "type": "string" },
+            "totalOverdueAmount": { "type": "number" },
+            "oldestOverdue": { "type": "ISO 8601 timestamp" }
+          }
+        ]
+      },
+      "errors": [
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 403, "message": "User is not a member of this group" },
+        { "code": 404, "message": "Group not found" }
+      ]
+    },
+    {
+      "id": "notification-list",
+      "method": "GET",
+      "path": "/notifications",
+      "summary": "Retrieve user's notifications (overdue alerts, settlement reminders)",
+      "authentication": true,
+      "queryParameters": {
+        "limit": { "type": "number", "default": 20 },
+        "offset": { "type": "number", "default": 0 },
+        "read": { "type": "boolean", "description": "Optional filter by read status" }
+      },
+      "responseBody": {
+        "statusCode": 200,
+        "notifications": [
+          {
+            "notificationId": { "type": "UUID" },
+            "type": { "type": "string", "enum": ["overdue_alert", "payment_reminder", "expense_created"] },
+            "groupId": { "type": "UUID" },
+            "groupName": { "type": "string" },
+            "message": { "type": "string" },
+            "read": { "type": "boolean" },
+            "createdAt": { "type": "ISO 8601 timestamp" }
+          }
+        ],
+        "total": { "type": "number" },
+        "unreadCount": { "type": "number" }
+      },
+      "errors": [
+        { "code": 401, "message": "Invalid or missing token" }
+      ]
+    },
+    {
+      "id": "notification-mark-read",
+      "method": "PATCH",
+      "path": "/notifications/{notificationId}",
+      "summary": "Mark a notification as read",
+      "authentication": true,
+      "pathParameters": {
+        "notificationId": { "type": "UUID", "required": true }
+      },
+      "requestBody": {
+        "read": { "type": "boolean", "required": true }
+      },
+      "responseBody": {
+        "statusCode": 200,
+        "notificationId": { "type": "UUID" },
+        "read": { "type": "boolean" },
+        "updatedAt": { "type": "ISO 8601 timestamp" }
+      },
+      "errors": [
+        { "code": 401, "message": "Invalid or missing token" },
+        { "code": 404, "message": "Notification not found" }
+      ]
+    }
+  ],
+  "summary": {
+    "totalEndpoints": 30,
+    "mvpEndpoints": 30,
+    "futureEndpoints": 0,
+    "categories": {
+      "authentication": 2,
+      "userManagement": 2,
+      "groupManagement": 5,
+      "memberManagement": 3,
+      "expenseManagement": 3,
+      "paymentSettlement": 3,
+      "accountability": 3,
+      "dashboard": 1,
+      "notifications": 2
+    }
+  }
+}

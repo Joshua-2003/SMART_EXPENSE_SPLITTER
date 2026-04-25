@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SplitWise — Smart Expense Splitter for Groups</title>
+<meta name="description" content="Split group expenses, track who owes what, and build accountability with reliability scores and settlement reminders." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
+        colors: {
+          background: 'hsl(var(--background))',
+          foreground: 'hsl(var(--foreground))',
+          card: 'hsl(var(--card))',
+          border: 'hsl(var(--border))',
+          primary: {
+            DEFAULT: 'hsl(var(--primary))',
+            foreground: 'hsl(var(--primary-foreground))',
+          },
+          secondary: 'hsl(var(--secondary))',
+          muted: {
+            DEFAULT: 'hsl(var(--muted))',
+            foreground: 'hsl(var(--muted-foreground))',
+          },
+          destructive: {
+            DEFAULT: 'hsl(var(--destructive))',
+            foreground: 'hsl(var(--destructive-foreground))',
+          },
+          success: 'hsl(var(--success))',
+          warning: 'hsl(var(--warning))',
+          sidebar: {
+            DEFAULT: 'hsl(var(--sidebar-background))',
+            foreground: 'hsl(var(--sidebar-foreground))',
+            border: 'hsl(var(--sidebar-border))',
+            accent: 'hsl(var(--sidebar-accent))',
+          },
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  :root {
+    --background: 222 33% 11%;
+    --foreground: 215 20% 92%;
+    --card: 222 30% 15%;
+    --popover: 222 30% 15%;
+    --primary: 222 89% 62%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 25% 19%;
+    --muted: 222 25% 19%;
+    --muted-foreground: 215 15% 62%;
+    --destructive: 0 78% 62%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 60% 50%;
+    --warning: 38 92% 58%;
+    --border: 222 22% 22%;
+    --ring: 222 89% 62%;
+    --sidebar-background: 222 32% 13%;
+    --sidebar-foreground: 215 18% 78%;
+    --sidebar-accent: 222 28% 18%;
+    --sidebar-border: 222 22% 22%;
+  }
+  html, body { background: hsl(var(--background)); color: hsl(var(--foreground)); }
+  body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: hsl(var(--primary) / 0.35); }
+  .text-success { color: hsl(var(--success)); }
+  .text-warning { color: hsl(var(--warning)); }
+  .bg-success { background-color: hsl(var(--success)); }
+  .bg-warning { background-color: hsl(var(--warning)); }
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  /* Sidebar group collapse */
+  details > summary { list-style: none; cursor: pointer; }
+  details > summary::-webkit-details-marker { display: none; }
+  details[open] .chev { transform: rotate(180deg); }
+  .chev { transition: transform 0.2s ease; }
+
+  /* Nav active state (using :target hack-free — manual class) */
+  .nav-item.active { color: hsl(var(--primary)); font-weight: 500; }
+  .nav-item.active .dot { background: hsl(var(--primary)); }
+</style>
+</head>
+<body class="min-h-screen">
+
+<div class="min-h-screen flex">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="hidden lg:flex w-64 shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex-col">
+    <!-- Logo -->
+    <div class="h-16 flex items-center gap-2.5 px-6 border-b border-sidebar-border shrink-0">
+      <div class="size-8 rounded-md bg-primary/15 text-primary flex items-center justify-center">
+        <!-- coins icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/></svg>
+      </div>
+      <span class="text-lg font-bold tracking-tight text-foreground">SplitWise</span>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto px-3 py-6 space-y-7">
+
+      <!-- Section: Main -->
+      <div>
+        <div class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Main</div>
+        <div class="flex flex-col gap-1">
+
+          <!-- Dashboard (open) -->
+          <details open>
+            <summary class="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+              <svg class="h-4 w-4 text-muted-foreground shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+              <span class="flex-1 text-left">Dashboard</span>
+              <svg class="chev h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <ul class="mt-1 ml-4 pl-4 border-l border-sidebar-border flex flex-col">
+              <li><a href="#" class="nav-item active group relative flex items-center gap-3 pl-4 pr-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"><span class="dot absolute -left-[5px] size-2 rounded-full border-2 border-sidebar bg-muted-foreground/40"></span><span class="flex-1 truncate">Overview</span></a></li>
+              <li><a href="#" class="nav-item group relative flex items-center gap-3 pl-4 pr-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"><span class="dot absolute -left-[5px] size-2 rounded-full border-2 border-sidebar bg-muted-foreground/40"></span><span class="flex-1 truncate">Activity</span></a></li>
+              <li><a href="#" class="nav-item group relative flex items-center gap-3 pl-4 pr-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"><span class="dot absolute -left-[5px] size-2 rounded-full border-2 border-sidebar bg-muted-foreground/40"></span><span class="flex-1 truncate">Reports</span></a></li>
+            </ul>
+          </details>
+
+          <!-- Groups -->
+          <details>
+            <summary class="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+              <svg class="h-4 w-4 text-muted-foreground shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span class="flex-1 text-left">Groups</span>
+              <svg class="chev h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <ul class="mt-1 ml-4 pl-4 border-l border-sidebar-border flex flex-col">
+              <li><a href="#" class="nav-item group relative flex items-center gap-3 pl-4 pr-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"><span class="dot absolute -left-[5px] size-2 rounded-full border-2 border-sidebar bg-muted-foreground/40"></span><span class="flex-1 truncate">All Groups</span></a></li>
+              <li><a href="#" class="nav-item group relative flex items-center gap-3 pl-4 pr-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"><span class="dot absolute -left-[5px] size-2 rounded-full border-2 border-sidebar bg-muted-foreground/40"></span><span class="flex-1 truncate">Create Group</span></a></li>
+            </ul>
+          </details>
+
+          <!-- Expenses -->
+          <details>
+            <summary class="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+              <svg class="h-4 w-4 text-muted-foreground shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></svg>
+              <span class="flex-1 text-left">Expenses</span>
+              <svg class="chev h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <ul class="mt-1 ml-4 pl-4 border-l border-sidebar-border flex flex-col">
+              <li><a href="#" class="nav-item group relative flex items-center gap-3 pl-4 pr-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"><span class="dot absolute -left-[5px] size-2 rounded-full border-2 border-sidebar bg-muted-foreground/40"></span><span class="flex-1 truncate">All Expenses</span></a></li>
+              <li><a href="#" class="nav-item group relative flex items-center gap-3 pl-4 pr-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"><span class="dot absolute -left-[5px] size-2 rounded-full border-2 border-sidebar bg-muted-foreground/40"></span><span class="flex-1 truncate">Add Expense</span></a></li>
+            </ul>
+          </details>
+
+          <!-- Settlements -->
+          <details>
+            <summary class="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+              <svg class="h-4 w-4 text-muted-foreground shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/><path d="M3 5v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8H5a2 2 0 0 1-2-2Z"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+              <span class="flex-1 text-left">Settlements</span>
+              <svg class="chev h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <ul class="mt-1 ml-4 pl-4 border-l border-sidebar-border flex flex-col">
+              <li><a href="#" class="nav-item group relative flex items-center gap-3 pl-4 pr-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <span class="dot absolute -left-[5px] size-2 rounded-full border-2 border-sidebar bg-muted-foreground/40"></span>
+                <span class="flex-1 truncate">Pending</span>
+                <span class="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded bg-destructive/15 text-destructive">3</span>
+              </a></li>
+              <li><a href="#" class="nav-item group relative flex items-center gap-3 pl-4 pr-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"><span class="dot absolute -left-[5px] size-2 rounded-full border-2 border-sidebar bg-muted-foreground/40"></span><span class="flex-1 truncate">History</span></a></li>
+            </ul>
+          </details>
+        </div>
+      </div>
+
+      <!-- Section: Accountability -->
+      <div>
+        <div class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Accountability</div>
+        <div class="flex flex-col gap-1">
+          <details>
+            <summary class="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+              <svg class="h-4 w-4 text-muted-foreground shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+              <span class="flex-1 text-left">Reliability</span>
+              <svg class="chev h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <ul class="mt-1 ml-4 pl-4 border-l border-sidebar-border flex flex-col">
+              <li><a href="#" class="nav-item group relative flex items-center gap-3 pl-4 pr-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"><span class="dot absolute -left-[5px] size-2 rounded-full border-2 border-sidebar bg-muted-foreground/40"></span><span class="flex-1 truncate">My Score</span></a></li>
+              <li><a href="#" class="nav-item group relative flex items-center gap-3 pl-4 pr-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"><span class="dot absolute -left-[5px] size-2 rounded-full border-2 border-sidebar bg-muted-foreground/40"></span><span class="flex-1 truncate">Group Ranking</span></a></li>
+            </ul>
+          </details>
+          <details>
+            <summary class="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+              <svg class="h-4 w-4 text-muted-foreground shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+              <span class="flex-1 text-left">Reminders</span>
+              <svg class="chev h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <ul class="mt-1 ml-4 pl-4 border-l border-sidebar-border flex flex-col">
+              <li><a href="#" class="nav-item group relative flex items-center gap-3 pl-4 pr-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"><span class="dot absolute -left-[5px] size-2 rounded-full border-2 border-sidebar bg-muted-foreground/40"></span><span class="flex-1 truncate">Outbox</span></a></li>
+            </ul>
+          </details>
+        </div>
+      </div>
+
+      <!-- Section: Account -->
+      <div>
+        <div class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Account</div>
+        <div class="flex flex-col gap-1">
+          <details>
+            <summary class="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+              <svg class="h-4 w-4 text-muted-foreground shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span class="flex-1 text-left">Settings</span>
+              <svg class="chev h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <ul class="mt-1 ml-4 pl-4 border-l border-sidebar-border flex flex-col">
+              <li><a href="#" class="nav-item group relative flex items-center gap-3 pl-4 pr-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"><span class="dot absolute -left-[5px] size-2 rounded-full border-2 border-sidebar bg-muted-foreground/40"></span><span class="flex-1 truncate">Profile</span></a></li>
+              <li><a href="#" class="nav-item group relative flex items-center gap-3 pl-4 pr-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"><span class="dot absolute -left-[5px] size-2 rounded-full border-2 border-sidebar bg-muted-foreground/40"></span><span class="flex-1 truncate">Preferences</span></a></li>
+            </ul>
+          </details>
+          <details>
+            <summary class="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+              <svg class="h-4 w-4 text-muted-foreground shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+              <span class="flex-1 text-left">Help</span>
+              <svg class="chev h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <ul class="mt-1 ml-4 pl-4 border-l border-sidebar-border flex flex-col">
+              <li><a href="#" class="nav-item group relative flex items-center gap-3 pl-4 pr-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"><span class="dot absolute -left-[5px] size-2 rounded-full border-2 border-sidebar bg-muted-foreground/40"></span><span class="flex-1 truncate">Documentation</span></a></li>
+            </ul>
+          </details>
+        </div>
+      </div>
+
+    </nav>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="flex-1 flex flex-col min-w-0">
+
+    <!-- Topbar -->
+    <header class="h-16 shrink-0 border-b border-border bg-card/40 backdrop-blur flex items-center gap-4 px-4 md:px-8">
+      <button type="button" class="lg:hidden inline-flex items-center justify-center rounded-md size-9 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors" aria-label="Open menu">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+      </button>
+
+      <button class="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        New Expense
+      </button>
+
+      <div class="relative ml-auto hidden md:block w-72">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" placeholder="Search groups, expenses, members…" class="w-full h-9 pl-9 pr-3 rounded-md bg-secondary/60 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
+      </div>
+
+      <button type="button" class="md:ml-0 ml-auto relative inline-flex items-center justify-center size-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors" aria-label="Notifications">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <span class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-[10px] font-bold text-white flex items-center justify-center">3</span>
+      </button>
+
+      <div class="flex items-center gap-3 pl-3 ml-1 border-l border-border">
+        <div class="hidden sm:block text-right leading-tight">
+          <div class="text-sm font-semibold text-foreground">Nick Reyes</div>
+          <div class="text-xs text-muted-foreground">Group Admin</div>
+        </div>
+        <div class="size-9 rounded-full bg-gradient-to-br from-primary to-primary/40 text-white flex items-center justify-center text-sm font-semibold ring-2 ring-primary/30">NR</div>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <main class="flex-1 overflow-y-auto px-4 md:px-8 py-6 md:py-8">
+      <div class="max-w-[1400px] mx-auto space-y-6">
+
+        <!-- Page header -->
+        <header class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+          <div>
+            <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
+            <p class="text-sm text-muted-foreground mt-1">SplitWise <span class="px-1">/</span><span class="text-primary">Overview</span></p>
+          </div>
+          <div class="text-sm text-muted-foreground">
+            Welcome back, <span class="text-foreground font-medium">Nick</span>. Here's your group activity.
+          </div>
+        </header>
+
+        <!-- KPI row -->
+        <section aria-label="Key indicators" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+
+          <!-- You Owe -->
+          <div class="relative bg-card border border-border rounded-xl p-6 hover:border-primary/40 transition-colors group">
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0">
+                <div class="text-sm font-medium text-muted-foreground">You Owe</div>
+                <div class="mt-3 text-3xl font-bold tracking-tight text-foreground tabular-nums">₱2,112</div>
+              </div>
+              <div class="size-11 rounded-lg bg-secondary/70 text-muted-foreground flex items-center justify-center group-hover:bg-primary/15 group-hover:text-primary transition-colors shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4"/><path d="M12 16V8"/></svg>
+              </div>
+            </div>
+            <div class="mt-5 flex items-center gap-1.5 text-xs">
+              <span class="inline-flex items-center gap-0.5 font-semibold tabular-nums text-destructive">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="7" x2="17" y2="17"/><polyline points="17 7 17 17 7 17"/></svg>
+                8.5%
+              </span>
+              <span class="text-muted-foreground truncate">vs last month</span>
+            </div>
+          </div>
+
+          <!-- Owed To You -->
+          <div class="relative bg-card border border-border rounded-xl p-6 hover:border-primary/40 transition-colors group">
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0">
+                <div class="text-sm font-medium text-muted-foreground">Owed To You</div>
+                <div class="mt-3 text-3xl font-bold tracking-tight text-foreground tabular-nums">₱5,430</div>
+              </div>
+              <div class="size-11 rounded-lg bg-secondary/70 text-muted-foreground flex items-center justify-center group-hover:bg-primary/15 group-hover:text-primary transition-colors shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12l4 4 4-4"/><path d="M12 8v8"/></svg>
+              </div>
+            </div>
+            <div class="mt-5 flex items-center gap-1.5 text-xs">
+              <span class="inline-flex items-center gap-0.5 font-semibold tabular-nums text-success">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+                12.3%
+              </span>
+              <span class="text-muted-foreground truncate">vs last month</span>
+            </div>
+          </div>
+
+          <!-- Active Groups -->
+          <div class="relative bg-card border border-border rounded-xl p-6 hover:border-primary/40 transition-colors group">
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0">
+                <div class="text-sm font-medium text-muted-foreground">Active Groups</div>
+                <div class="mt-3 text-3xl font-bold tracking-tight text-foreground tabular-nums">6</div>
+              </div>
+              <div class="size-11 rounded-lg bg-secondary/70 text-muted-foreground flex items-center justify-center group-hover:bg-primary/15 group-hover:text-primary transition-colors shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+            </div>
+            <div class="mt-5 flex items-center gap-1.5 text-xs">
+              <span class="inline-flex items-center gap-0.5 font-semibold tabular-nums text-success">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+                2%
+              </span>
+              <span class="text-muted-foreground truncate">new this month</span>
+            </div>
+          </div>
+
+          <!-- Reliability Score -->
+          <div class="relative bg-card border border-border rounded-xl p-6 hover:border-primary/40 transition-colors group">
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0">
+                <div class="text-sm font-medium text-muted-foreground">Reliability Score</div>
+                <div class="mt-3 text-3xl font-bold tracking-tight text-foreground tabular-nums">88</div>
+              </div>
+              <div class="size-11 rounded-lg bg-secondary/70 text-muted-foreground flex items-center justify-center group-hover:bg-primary/15 group-hover:text-primary transition-colors shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+              </div>
+            </div>
+            <div class="mt-5 flex items-center gap-1.5 text-xs">
+              <span class="inline-flex items-center gap-0.5 font-semibold tabular-nums text-success">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+                3.2%
+              </span>
+              <span class="text-muted-foreground truncate">trending up</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Chart + Settlement Status -->
+        <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+          <!-- Activity Chart -->
+          <div class="xl:col-span-2 bg-card border border-border rounded-xl p-6">
+            <div class="flex flex-wrap items-start justify-between gap-3 mb-6">
+              <div>
+                <h2 class="text-base font-semibold text-foreground">Group Activity</h2>
+                <p class="text-sm text-muted-foreground mt-0.5">Monthly settled vs outstanding amounts across all groups</p>
+              </div>
+              <div class="inline-flex rounded-md border border-border bg-secondary/40 p-0.5 text-xs">
+                <button class="px-3 py-1.5 rounded text-muted-foreground hover:text-foreground transition-colors">6M</button>
+                <button class="px-3 py-1.5 rounded bg-primary text-white font-medium">1Y</button>
+                <button class="px-3 py-1.5 rounded text-muted-foreground hover:text-foreground transition-colors">All</button>
+              </div>
+            </div>
+            <div class="h-[280px]">
+              <canvas id="activityChart"></canvas>
+            </div>
+            <div class="flex items-center justify-center gap-6 mt-3 text-xs text-muted-foreground">
+              <span class="inline-flex items-center gap-2"><span class="size-2 rounded-full" style="background:hsl(var(--primary))"></span>Settled</span>
+              <span class="inline-flex items-center gap-2"><span class="size-2 rounded-full" style="background:hsl(var(--primary)/0.25)"></span>Outstanding</span>
+            </div>
+          </div>
+
+          <!-- Settlement Status (half donut) -->
+          <section class="bg-card border border-border rounded-xl p-6 flex flex-col">
+            <div class="flex items-start justify-between gap-3 mb-2">
+              <div>
+                <h2 class="text-base font-semibold text-foreground">Settlement Status</h2>
+                <p class="text-sm text-muted-foreground mt-0.5">This month</p>
+              </div>
+              <button class="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground border border-border rounded-md px-2.5 py-1.5">
+                All groups
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+            </div>
+
+            <div class="relative flex justify-center pt-6">
+              <svg viewBox="0 0 180 100" class="w-full max-w-[260px] h-auto">
+                <circle cx="90" cy="90" r="70" fill="none" stroke="hsl(var(--secondary))" stroke-width="14" stroke-dasharray="219.9 439.8" stroke-linecap="round" transform="rotate(180 90 90)"/>
+                <circle cx="90" cy="90" r="70" fill="none" stroke="hsl(var(--primary))" stroke-width="14" stroke-dasharray="167.1 439.8" stroke-linecap="round" transform="rotate(180 90 90)"/>
+              </svg>
+              <div class="absolute inset-x-0 bottom-2 flex flex-col items-center">
+                <div class="text-4xl font-bold tabular-nums">76%</div>
+              </div>
+            </div>
+
+            <div class="mt-4 text-center">
+              <div class="text-base font-semibold">Mostly on track</div>
+              <p class="text-sm text-muted-foreground mt-1 max-w-[260px] mx-auto">24 of 32 expenses settled. 8 still pending across 3 groups.</p>
+            </div>
+
+            <button class="mt-5 w-full rounded-md bg-primary/10 text-primary text-sm font-medium py-2.5 hover:bg-primary/15 transition-colors">Send reminders</button>
+          </section>
+        </section>
+
+        <!-- Recent Expenses + Reliability -->
+        <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+          <!-- Recent Expenses table -->
+          <div class="xl:col-span-2 bg-card border border-border rounded-xl">
+            <div class="flex items-start justify-between gap-3 p-6 pb-4">
+              <div>
+                <h2 class="text-base font-semibold text-foreground">Recent Expenses</h2>
+                <p class="text-sm text-muted-foreground mt-0.5">Latest activity across your groups</p>
+              </div>
+              <button class="text-sm font-medium text-primary hover:opacity-80 transition-colors">View all</button>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-[11px] uppercase tracking-wider text-muted-foreground border-y border-border bg-secondary/30">
+                    <th class="text-left font-medium py-3 px-6">Expense</th>
+                    <th class="text-left font-medium py-3 px-4">Paid by</th>
+                    <th class="text-right font-medium py-3 px-4">Total</th>
+                    <th class="text-right font-medium py-3 px-4">Your share</th>
+                    <th class="text-left font-medium py-3 px-4">Status</th>
+                    <th class="text-right font-medium py-3 px-6">Date</th>
+                  </tr>
+                </thead>
+                <tbody id="expenses-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Reliability Panel -->
+          <section class="bg-card border border-border rounded-xl p-6">
+            <div class="flex items-start justify-between gap-3 mb-5">
+              <div>
+                <h2 class="text-base font-semibold text-foreground">Reliability Ranking</h2>
+                <p class="text-sm text-muted-foreground mt-0.5">Based on payment consistency</p>
+              </div>
+              <button class="text-sm font-medium text-primary hover:opacity-80 transition-colors">View all</button>
+            </div>
+            <ul id="reliability-list" class="flex flex-col gap-4"></ul>
+          </section>
+        </section>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  // ============== Activity Chart ==============
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const hsl = (v, a = 1) => `hsl(${v} / ${a})`;
+  const PRIMARY = css('--primary');
+  const BORDER = css('--border');
+  const MUTED_FG = css('--muted-foreground');
+
+  const ctx = document.getElementById('activityChart');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      datasets: [
+        { label: 'Settled', data: [4200,3100,5400,4800,6100,5200,7400,6800,8200,7100,5800,6400], backgroundColor: hsl(PRIMARY, 1), borderRadius: 4, maxBarThickness: 18 },
+        { label: 'Outstanding', data: [1800,2400,3100,2200,2800,3600,3100,2400,4100,3400,2900,2100], backgroundColor: hsl(PRIMARY, 0.25), borderRadius: 4, maxBarThickness: 18 },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: hsl(css('--popover')),
+          borderColor: hsl(BORDER), borderWidth: 1,
+          titleColor: hsl(css('--foreground')), bodyColor: hsl(css('--foreground')),
+          callbacks: { label: (c) => `${c.dataset.label}: ₱${c.parsed.y.toLocaleString()}` },
+        },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: hsl(MUTED_FG), font: { size: 12 } }, border: { display: false } },
+        y: {
+          grid: { color: hsl(BORDER), drawBorder: false },
+          ticks: { color: hsl(MUTED_FG), font: { size: 12 }, callback: (v) => '₱' + (v/1000).toFixed(0) + 'k' },
+          border: { display: false },
+        },
+      },
+    },
+  });
+
+  // ============== Recent Expenses ==============
+  const expenses = [
+    { title: 'Hotel — Le Monet (3 nights)', group: 'Baguio Trip', paidBy: 'Andrea', initials: 'AC', amount: '₱4,200', share: '₱1,050', status: 'pending', date: 'Today' },
+    { title: 'Grocery run — SM Hypermart', group: 'Apartment 4B', paidBy: 'You', initials: 'NR', amount: '₱1,840', share: '+ ₱460', status: 'settled', date: 'Yesterday' },
+    { title: 'Dinner at Hill Station', group: 'Baguio Trip', paidBy: 'Marco', initials: 'MP', amount: '₱2,650', share: '₱662', status: 'overdue', date: '3 days ago' },
+    { title: 'Internet bill — October', group: 'Apartment 4B', paidBy: 'Liza', initials: 'LM', amount: '₱1,599', share: '₱400', status: 'settled', date: 'Oct 12' },
+    { title: 'Team lunch — Project kickoff', group: 'Capstone Team', paidBy: 'You', initials: 'NR', amount: '₱2,100', share: '+ ₱1,575', status: 'pending', date: 'Oct 10' },
+  ];
+  const statusStyles = {
+    settled: 'bg-success/15 text-success',
+    pending: 'bg-warning/15 text-warning',
+    overdue: 'bg-destructive/15 text-destructive',
+  };
+  const dotBg = { settled: 'bg-success', pending: 'bg-warning', overdue: 'bg-destructive' };
+
+  document.getElementById('expenses-tbody').innerHTML = expenses.map((e, i) => {
+    const last = i === expenses.length - 1;
+    const shareClass = e.share.startsWith('+') ? 'text-success' : 'text-foreground';
+    return `
+      <tr class="hover:bg-secondary/40 transition-colors ${last ? '' : 'border-b border-border/60'}">
+        <td class="py-4 px-6">
+          <div class="font-medium text-foreground">${e.title}</div>
+          <div class="text-xs text-muted-foreground mt-0.5">${e.group}</div>
+        </td>
+        <td class="py-4 px-4">
+          <div class="flex items-center gap-2.5">
+            <div class="size-8 rounded-full bg-primary/15 text-primary text-xs font-semibold flex items-center justify-center">${e.initials}</div>
+            <span class="text-foreground">${e.paidBy}</span>
+          </div>
+        </td>
+        <td class="py-4 px-4 text-right tabular-nums font-medium text-foreground">${e.amount}</td>
+        <td class="py-4 px-4 text-right tabular-nums font-semibold ${shareClass}">${e.share}</td>
+        <td class="py-4 px-4">
+          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${statusStyles[e.status]}">
+            <span class="size-1.5 rounded-full ${dotBg[e.status]}"></span>${e.status}
+          </span>
+        </td>
+        <td class="py-4 px-6 text-right text-muted-foreground tabular-nums">${e.date}</td>
+      </tr>`;
+  }).join('');
+
+  // ============== Reliability Ranking ==============
+  const members = [
+    { name: 'Andrea Cruz', initials: 'AC', group: 'Baguio Trip', score: 96 },
+    { name: 'Liza Mendoza', initials: 'LM', group: 'Apartment 4B', score: 91 },
+    { name: 'You', initials: 'NR', group: 'All groups', score: 88 },
+    { name: 'Marco Pena', initials: 'MP', group: 'Baguio Trip', score: 64 },
+    { name: 'Jorge Tan', initials: 'JT', group: 'Capstone Team', score: 42 },
+  ];
+  const tierFor = (s) => s >= 85 ? { label: 'Excellent', text: 'text-success', bg: 'bg-success' }
+    : s >= 60 ? { label: 'Fair', text: 'text-warning', bg: 'bg-warning' }
+    : { label: 'At risk', text: 'text-destructive', bg: 'bg-destructive' };
+
+  document.getElementById('reliability-list').innerHTML = members.map((m) => {
+    const t = tierFor(m.score);
+    return `
+      <li class="flex items-center gap-3">
+        <div class="size-9 rounded-full bg-primary/15 text-primary text-xs font-semibold flex items-center justify-center shrink-0">${m.initials}</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-baseline justify-between gap-2">
+            <span class="text-sm font-medium text-foreground truncate">${m.name}</span>
+            <span class="text-sm font-semibold tabular-nums ${t.text}">${m.score}</span>
+          </div>
+          <div class="mt-1.5 h-1.5 rounded-full bg-secondary overflow-hidden">
+            <div class="h-full rounded-full ${t.bg}" style="width:${m.score}%"></div>
+          </div>
+          <div class="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
+            <span class="truncate">${m.group}</span>
+            <span class="${t.text}">${t.label}</span>
+          </div>
+        </div>
+      </li>`;
+  }).join('');
+</script>
+
+</body>
+</html>
