@@ -5,6 +5,7 @@ import GuestRoute from "../guards/GuestRoute";
 
 // auth
 import LoginPage from "../pages/auth/Login";
+import SignUpPage from "../pages/auth/SignUp";
 
 // dashboard
 import DashboardPage from "../pages/dashboard/Dashboard";
@@ -22,6 +23,15 @@ export default function AppRouter() {
                             <LoginPage />
                         </GuestRoute>
                     } 
+                />
+
+                <Route
+                    path="/signup"
+                    element={
+                        <GuestRoute>
+                            <SignUpPage />
+                        </GuestRoute>
+                    }
                 />
 
                 <Route 

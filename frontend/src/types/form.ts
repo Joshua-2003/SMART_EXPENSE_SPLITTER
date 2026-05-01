@@ -3,6 +3,11 @@ import type { FieldError, UseFormRegisterReturn } from 'react-hook-form';
 /**
  * Form-related type definitions
  */
+export interface SignUpFormInputs {
+  email: string;
+  password: string;
+  name: string;
+}
 
 export interface LoginFormInputs {
   email: string;

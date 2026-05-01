@@ -83,7 +83,7 @@ export default function LoginPage() {
         disabled={isSubmitting}
         className="w-full mt-6"
       >
-        Sign In
+        Log In
       </Button>
 
       {/* Sign Up Link */}

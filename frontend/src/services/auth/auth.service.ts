@@ -3,7 +3,7 @@ import type { RegisterRequest, RegisterResponse, LoginRequest, LoginResponse, Ge
 
 export const authService = {
     register: async (data: RegisterRequest): Promise<RegisterResponse> => {
-        const response = await api.post<RegisterResponse>('/auth/register', data);
+        const response = await api.post<RegisterResponse>('/auth/signup', data);
         return response.data;
     },
 
