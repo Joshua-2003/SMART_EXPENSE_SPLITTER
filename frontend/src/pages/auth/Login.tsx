@@ -30,7 +30,7 @@ export default function LoginPage() {
     try {
       await login(data.email, data.password);
 
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     } catch (error: any) {
       // Handle API errors
       const errorMessage =
