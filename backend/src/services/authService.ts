@@ -112,9 +112,11 @@ export async function getUserProfile(userId: string) {
 
   // Return user without password hash
   return {
-    userId: user.id,
-    email: user.email,
-    name: user.name,
+    user: {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+    },
     createdAt: user.createdAt,
   };
 }
