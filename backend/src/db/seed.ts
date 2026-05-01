@@ -16,6 +16,13 @@ async function seed(): Promise<void> {
   try {
     console.log('🌱 Starting database seed...\n');
 
+    // Clear existing data (respecting foreign key constraints)
+    console.log('🧹 Clearing existing data...');
+    await db.delete(groupMembers);
+    await db.delete(groups);
+    await db.delete(users);
+    console.log('✅ Cleared existing data\n');
+
     // Seed users
     console.log('👥 Seeding users...');
     const userIds = await db
