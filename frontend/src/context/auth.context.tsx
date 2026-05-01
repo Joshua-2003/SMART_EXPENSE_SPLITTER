@@ -28,6 +28,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const getMe = async () => {
+        
+        const token = localStorage.getItem("token");
+        if (!token) {
+            setLoading(false);
+            return;
+        }
+
        try {
         const res = await authService.getMe();
         setUser(res.data.user);
