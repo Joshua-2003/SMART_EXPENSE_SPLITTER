@@ -39,12 +39,11 @@ export default function SignUpPage() {
             navigate('/dashboard', { replace: true }); // Redirect to dashboard after successful registration
         } catch (error: any) {
             const errorMessage =
-                error?.response?.data?.message ||
-                error?.message ||
+                error.response?.data?.error?.message ||
                 'Sign up failed. Please try again.';
 
             setApiError(errorMessage);
-            console.error('Sign up   error:', error.response);
+            console.error('Sign up   error:', error.response.data.error.message);
         }
     }
 
@@ -66,7 +65,12 @@ export default function SignUpPage() {
                label="Full Name"
                placeholder="John Doe"
                type="text"
-               register={register('name', { required: 'Name is required' })}
+               register={register('name', 
+                  { required: 'Name is required',
+                    minLength: { value: 1, message: 'Name must be at least 1 character' },
+                    maxLength: { value: 255, message: 'Name must be less than 255 characters' },
+                  }
+                )}
                error={errors.name}
              />
 
@@ -75,7 +79,12 @@ export default function SignUpPage() {
                label="Email Address"
                placeholder="name@example.com"
                type="email"
-               register={register('email', { required: 'Email is required' })}
+               register={register('email', 
+                { required: 'Email is required', 
+                  maxLength: { value: 255, message: 'Email must be less than 255 characters' },
+                  pattern: { value: /^\S+@\S+\.\S+$/, message: 'Email must be a valid email address' },
+                } 
+              )}
                error={errors.email}
              />
        
@@ -84,7 +93,11 @@ export default function SignUpPage() {
                label="Password"
                placeholder="Enter your password"
                type="password"
-               register={register('password', { required: 'Password is required' })}
+               register={register('password', 
+                { required: 'Password is required',
+                  minLength: { value: 8, message: 'Password must be at least 8 characters long' },
+                }
+              )}
                error={errors.password}
              />
        
