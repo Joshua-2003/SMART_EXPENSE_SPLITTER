@@ -32,11 +32,9 @@ export default function LoginPage() {
 
       navigate('/dashboard', { replace: true });
     } catch (error: any) {
-      // Handle API errors
       const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        'Login failed. Please try again.';
+        error.response?.data?.error?.message ||
+        'Sign up failed. Please try again.';
 
       setApiError(errorMessage);
       console.error('Login error:', error);
