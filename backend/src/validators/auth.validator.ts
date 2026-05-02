@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { body, validationResult } from 'express-validator';
+import { sendValidationError } from '@/utils/responseUtils.js';
 
 /**
  * Validation error handler middleware
@@ -27,12 +28,7 @@ export function handleValidationErrors(
     });
 
     // Send 400 Bad Request with error details
-    res.status(400).json({
-      success: false,
-      statusCode: 400,
-      message: 'Validation failed',
-      errors: errorMessages,
-    });
+    sendValidationError(res, errorMessages);
     return;
   }
 
