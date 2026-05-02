@@ -61,7 +61,13 @@ export default function LoginPage() {
         label="Email Address"
         placeholder="name@example.com"
         type="email"
-        register={register('email', { required: 'Email is required' })}
+        register={register('email',
+          {
+            required: 'Email is required',
+            maxLength: { value: 255, message: 'Email must be less than 255 characters' },
+            pattern: { value: /^\S+@\S+\.\S+$/, message: 'Email must be a valid email address' },
+          }
+        )}
         error={errors.email}
       />
 
@@ -70,7 +76,12 @@ export default function LoginPage() {
         label="Password"
         placeholder="Enter your password"
         type="password"
-        register={register('password', { required: 'Password is required' })}
+        register={register('password',
+          {
+            required: 'Password is required',
+            minLength: { value: 8, message: 'Password must be at least 8 characters long' },
+          }
+        )}
         error={errors.password}
       />
 
