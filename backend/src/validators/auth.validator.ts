@@ -48,6 +48,8 @@ export function handleValidationErrors(
 export const validateSignup = [
   body('email')
     .trim()
+    .notEmpty()
+    .withMessage('Email is required')
     .isEmail()
     .withMessage('Email must be a valid email address')
     .isLength({ max: 255 })
@@ -79,6 +81,8 @@ export const validateSignup = [
 export const validateLogin = [
   body('email')
     .trim()
+    .notEmpty()
+    .withMessage('Email is required')
     .isEmail()
     .withMessage('Email must be a valid email address'),
 
