@@ -1,24 +1,9 @@
-/**
- * Group Routes
- * 
- * Placeholder for group endpoints
- * Will be implemented by Backend Implementation Agent
- * 
- * Endpoints to implement:
- * - POST /api/groups
- * - GET /api/groups
- * - GET /api/groups/:groupId
- * - PATCH /api/groups/:groupId
- * - DELETE /api/groups/:groupId
- * - POST /api/groups/:groupId/members
- * - DELETE /api/groups/:groupId/members/:userId
- * - GET /api/groups/:groupId/members
- */
-
 import { Router } from 'express';
+import * as groupController from '@/controllers/groupController.js';
+import { authMiddleware } from '@/middlewares/authMiddleware.js';
 
 const router = Router();
 
-// Routes will be added by Backend Implementation Agent
+router.post('/', authMiddleware, groupController.createGroup);
 
 export default router;

@@ -1,18 +1,24 @@
-/**
- * Group Management Controller
- * 
- * Placeholder for group-related request handlers
- * Will be implemented by Backend Implementation Agent
- * 
- * Methods to implement:
- * - createGroup()
- * - getGroupDetails()
- * - getUserGroups()
- * - updateGroup()
- * - deleteGroup()
- * - addMember()
- * - removeMember()
- * - listMembers()
- */
+import { Request, Response } from 'express';
+import * as groupService from '@/services/groupService.js';
+import { sendSuccess, sendError } from '@/utils/responseUtils.js';
+import { AuthenticationError, ConflictError } from '@/utils/errorUtils.js';
+import { AuthenticatedRequest } from '@/middlewares/authMiddleware.js';
 
-export {};
+export async function createGroup(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+        const { name, description } = req.body;
+        const adminId = req.userId!; // Set by authMiddleware
+
+        const result = await groupService.createGroup({ name, description, adminId });
+        sendSuccess(res, 201, result);
+    } catch (error) {
+        if (error instanceof AuthenticationError) {
+            sendError(res, 401, 'Unauthorized');
+        } else if (error instanceof ConflictError) {
+            sendError(res, 409, 'Group creation failed');
+        } else {
+            sendError(res, 500, 'Internal server error');
+        }
+    }
+}
+

@@ -11,7 +11,7 @@ import { errorHandler, notFoundHandler } from '@middlewares/errorHandler.js';
 // Route imports (will be added as implementation progresses)
 import authRoutes from '@routes/authRoutes.js';
 // import userRoutes from '@routes/userRoutes';
-// import groupRoutes from '@routes/groupRoutes';
+import groupRoutes from '@routes/groupRoutes.js';
 // import expenseRoutes from '@routes/expenseRoutes';
 // import accountabilityRoutes from '@routes/accountabilityRoutes';
 // import notificationRoutes from '@routes/notificationRoutes';
@@ -61,8 +61,8 @@ export function createApp(): Express {
   // ROUTE SETUP
   // =====================================================================
 
-  // Authentication routes
   app.use('/api/auth', authRoutes);
+  app.use('api/groups', groupRoutes);
 
   // Routes will be mounted here by Backend Implementation Agent
   // app.use('/api/users', userRoutes);
