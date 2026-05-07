@@ -1,4 +1,4 @@
-import * as authRepository from '@/repositories/authRepository.js';
+import * as userRepo from '@/repositories/userRepo.js';
 import { hashPassword, verifyPassword } from '@/utils/passwordUtils.js';
 import { generateToken } from '@/utils/jwtUtils.js';
 import { ConflictError, AuthenticationError } from '@/utils/errorUtils.js';
@@ -34,7 +34,7 @@ export interface AuthResponse {
  */
 export async function signup(input: SignupInput): Promise<AuthResponse> {
   // Check if email already exists
-  const existingUser = await authRepository.findUserByEmail(input.email);
+  const existingUser = await userRepo.findUserByEmail(input.email);
   if (existingUser) {
     throw new ConflictError('This email is already registered');
   }
@@ -43,7 +43,7 @@ export async function signup(input: SignupInput): Promise<AuthResponse> {
   const passwordHash = await hashPassword(input.password);
 
   // Create user in database
-  const user = await authRepository.createUser({
+  const user = await userRepo.createUser({
     email: input.email,
     passwordHash,
     name: input.name,
@@ -73,7 +73,7 @@ export async function signup(input: SignupInput): Promise<AuthResponse> {
  */
 export async function login(input: LoginInput): Promise<AuthResponse> {
   // Find user by email
-  const user = await authRepository.findUserByEmail(input.email);
+  const user = await userRepo.findUserByEmail(input.email);
   if (!user) {
     throw new AuthenticationError('Invalid email or password');
   }
@@ -105,7 +105,7 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
  * @throws NotFoundError if user not found
  */
 export async function getUserProfile(userId: string) {
-  const user = await authRepository.findUserById(userId);
+  const user = await userRepo.findUserById(userId);
   if (!user) {
     throw new Error('User not found');
   }
