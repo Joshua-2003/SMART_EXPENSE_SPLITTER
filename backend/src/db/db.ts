@@ -1,8 +1,8 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { databaseConfig } from '@config/database';
+import { databaseConfig } from '@config/database.js';
 import { sql } from 'drizzle-orm';
-import * as schema from '@models/schema';
+import * as schema from '@models/schema.js';
 
 /**
  * Database Connection Setup
