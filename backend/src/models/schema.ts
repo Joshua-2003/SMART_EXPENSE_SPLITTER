@@ -7,13 +7,12 @@ import {
   decimal,
   boolean,
   pgEnum,
-  uniqueIndex,
   index,
   foreignKey,
   unique,
   check,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
+import { sql, relations } from 'drizzle-orm';
 
 // =====================================================================
 // ENUMS
@@ -106,6 +105,24 @@ export const groupMembers = pgTable(
     roleIdx: index('idx_group_members_role').on(table.role),
   })
 );
+
+
+// Group and group member and groups relations
+export const groupsRelations = relations(groups, ({ many}) => ({
+  members: many(groupMembers),
+}));
+
+export const groupMembersRelations = relations(groupMembers, ({ one }) => ({
+  group: one(groups, {
+    fields: [groupMembers.groupId],
+    references: [groups.id],
+  }),
+
+  user: one(users, {
+    fields: [groupMembers.userId],
+    references: [users.id],
+  }),
+}));
 
 // =====================================================================
 // TABLE 4: EXPENSES
