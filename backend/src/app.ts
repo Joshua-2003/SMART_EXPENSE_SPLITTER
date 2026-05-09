@@ -62,7 +62,7 @@ export function createApp(): Express {
   // =====================================================================
 
   app.use('/api/auth', authRoutes);
-  app.use('api/groups', groupRoutes);
+  app.use('/api/groups', groupRoutes);
 
   // Routes will be mounted here by Backend Implementation Agent
   // app.use('/api/users', userRoutes);
