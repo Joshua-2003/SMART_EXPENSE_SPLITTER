@@ -4,6 +4,20 @@ import { sendSuccess, sendError } from '@/utils/responseUtils.js';
 import { AuthenticationError, ConflictError } from '@/utils/errorUtils.js';
 import { AuthenticatedRequest } from '@/middlewares/authMiddleware.js';
 
+export async function getGroupById(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+        const { groupId } = req.params;
+        const group = await groupService.getGroupById(groupId);
+        sendSuccess(res, 200, group);
+    } catch (error) {
+        if (error instanceof AuthenticationError) {
+            sendError(res, 401, 'Unauthorized');
+        } else {
+            sendError(res, 500, 'Internal server error');
+        }
+    }
+}
+
 export async function createGroup(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
         const { name, description } = req.body;
