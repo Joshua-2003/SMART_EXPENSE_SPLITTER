@@ -1,10 +1,16 @@
 import * as userRepo from '@/repositories/userRepo.js';
 import * as groupRepo from '@/repositories/groupRepo.js';
-import { AuthenticationError, ConflictError } from '@/utils/errorUtils.js';
+import { AuthenticationError, ConflictError, NotFoundError } from '@/utils/errorUtils.js';
 import { CreateGroupInput, GroupResponse, GroupDetailsResponse } from '@/types/group.js';
 
-export async function getGroupById(groupId: string): Promise<GroupDetailsResponse | null> {
-    return await groupRepo.getGroupById(groupId);
+export async function getGroupById(groupId: string): Promise<GroupDetailsResponse> {
+    const group = await groupRepo.getGroupById(groupId);
+
+    if (!group) {
+        throw new NotFoundError(`${groupId} not found`);
+    }
+
+    return group;
 }
 
 export async function createGroup(input: CreateGroupInput): Promise<GroupResponse> {
