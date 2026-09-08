@@ -34,7 +34,7 @@ This project delivers a group expense management system for friends, roommates, 
 | AUTH-003 | AUTH | Phase 1 | P1 | User Profile Retrieval and Update | M | Done |
 | GROUP-001 | GROUP | Phase 2 | P0 | Create Group | M | Done |
 | GROUP-002 | GROUP | Phase 2 | P0 | List Groups for Authenticated User | S | Done |
-| GROUP-003 | GROUP | Phase 2 | P0 | Get Group Details and Members | M | Not Started |
+| GROUP-003 | GROUP | Phase 2 | P0 | Get Group Details and Members | M | Done |
 | GROUP-004 | GROUP | Phase 2 | P1 | Update Group Details (Admin Only) | S | Not Started |
 | GROUP-005 | GROUP | Phase 2 | P1 | Add and Remove Group Members | M | Not Started |
 | EXP-001 | EXPENSE | Phase 2 | P0 | Create Shared Expense | M | Not Started |
@@ -272,6 +272,7 @@ Implement the authenticated list groups endpoint and UI behavior for retrieving 
 - Phase: Phase 2
 - Priority: P0
 - Complexity: M
+- Status: Done (2026-09-09)
 
 #### User Story
 > As a member of a group, I want to view the group details and membership roster so that I can understand the participants and group context.
@@ -962,3 +963,4 @@ DASH-001
 | 1.3 | 2026-09-09 | AUTH-003 (User Profile Retrieval and Update) completed: protected GET /users/me + PATCH /users/{userId}, auth middleware, Profile page. |
 | 1.4 | 2026-09-09 | GROUP-001 (Create Group) completed: POST /groups with transactional group + admin membership creation, Create Group modal wired to real API. |
 | 1.5 | 2026-09-09 | GROUP-002 (List Groups for Authenticated User) completed: protected paginated GET /groups with role + memberCount, app-wide group list loading in MainLayout with auto-select. |
+| 1.6 | 2026-09-09 | GROUP-003 (Get Group Details and Members) completed: protected GET /groups/{groupId} with member-only access control and member roster join, group details + members loaded into store on active workspace change. |

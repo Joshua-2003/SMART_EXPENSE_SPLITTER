@@ -3,10 +3,11 @@ import type { ApiResponseError, ApiResponseSuccess } from '../types/api';
 import type {
   CreateGroupPayload,
   CreateGroupResult,
+  GroupDetailsApiResult,
   GroupListItem,
   ListGroupsResult,
 } from '../types/group';
-import type { Group } from '../types';
+import type { Group, GroupMember } from '../types';
 
 export async function createGroup(payload: CreateGroupPayload): Promise<CreateGroupResult> {
   const response = await apiClient.post<
@@ -66,5 +67,45 @@ export async function listGroups(
     total: body.data.total,
     limit: body.data.limit,
     offset: body.data.offset,
+  };
+}
+
+export interface GroupDetailsResult {
+  group: Group;
+  members: GroupMember[];
+}
+
+export async function getGroupDetails(groupId: string): Promise<GroupDetailsResult> {
+  const response = await apiClient.get<ApiResponseSuccess<GroupDetailsApiResult> | ApiResponseError>(
+    `/groups/${groupId}`,
+  );
+
+  const body = response.data;
+
+  if (body.status === 'error') {
+    throw new Error(body.message);
+  }
+
+  const { members, ...rest } = body.data;
+
+  return {
+    group: {
+      id: rest.groupId,
+      name: rest.name,
+      description: rest.description,
+      adminId: rest.adminId,
+      memberCount: members.length,
+      currencySymbol: '₱',
+      createdAt: rest.createdAt,
+    },
+    members: members.map((m) => ({
+      groupId,
+      userId: m.userId,
+      name: m.name,
+      email: m.email,
+      role: m.role,
+      balance: 0,
+      joinedAt: m.joinedAt,
+    })),
   };
 }

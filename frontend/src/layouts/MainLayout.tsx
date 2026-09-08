@@ -22,6 +22,7 @@ import { setCurrentUser, logout } from '../store/slices/authSlice';
 import {
   setCurrentGroup,
   setGroups,
+  setGroupDetails,
   setLoading,
   setError,
 } from '../store/slices/groupsSlice';
@@ -41,7 +42,7 @@ import { CreateExpenseModal } from '../components/expenses/CreateExpenseModal';
 import { CreateGroupModal } from '../components/groups/CreateGroupModal';
 import { AddMemberModal } from '../components/members/AddMemberModal';
 import { ToastContainer } from '../components/common/Toast';
-import { listGroups } from '../services/group.service';
+import { getGroupDetails, listGroups } from '../services/group.service';
 import { Group, User } from '../types';
 
 export const MainLayout: React.FC = () => {
@@ -85,6 +86,19 @@ export const MainLayout: React.FC = () => {
 
     void loadGroups();
   }, [dispatch]);
+
+  useEffect(() => {
+    const loadGroupDetails = async () => {
+      try {
+        const details = await getGroupDetails(currentGroup.id);
+        dispatch(setGroupDetails(details));
+      } catch (err) {
+        dispatch(setError(err instanceof Error ? err.message : 'Failed to load group details.'));
+      }
+    };
+
+    void loadGroupDetails();
+  }, [currentGroup.id, dispatch]);
 
   const unreadNotifs = notifications.filter((n) => !n.read);
 

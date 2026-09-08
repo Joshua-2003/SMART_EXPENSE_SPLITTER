@@ -54,6 +54,23 @@ export interface ListGroupsResult {
   offset: number;
 }
 
+export interface GroupMemberApiItem {
+  userId: string;
+  name: string;
+  email: string;
+  role: MemberRole;
+  joinedAt: string;
+}
+
+export interface GroupDetailsApiResult {
+  groupId: string;
+  name: string;
+  description: string | null;
+  adminId: string;
+  members: GroupMemberApiItem[];
+  createdAt: string;
+}
+
 export interface UpdateGroupPayload {
   name?: string;
   description?: string;

@@ -10,6 +10,11 @@ interface GroupsState {
   error: string | null;
 }
 
+interface GroupDetailsPayload {
+  group: Group;
+  members: GroupMember[];
+}
+
 const initialState: GroupsState = {
   groups: mockGroups,
   currentGroup: defaultCurrentGroup,
@@ -32,6 +37,13 @@ export const groupsSlice = createSlice({
     },
     setGroups: (state, action: PayloadAction<Group[]>) => {
       state.groups = action.payload;
+    },
+    setGroupDetails: (state, action: PayloadAction<GroupDetailsPayload>) => {
+      state.currentGroup = {
+        ...state.currentGroup,
+        ...action.payload.group,
+      };
+      state.members = action.payload.members;
     },
     createGroup: (state, action: PayloadAction<{ name: string; description?: string; adminId: string }>) => {
       const newGroup: Group = {
@@ -101,6 +113,7 @@ export const {
   setCurrentGroup,
   addGroup,
   setGroups,
+  setGroupDetails,
   createGroup,
   updateGroupDetails,
   addMember,

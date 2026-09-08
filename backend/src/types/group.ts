@@ -32,3 +32,20 @@ export interface ListGroupsResult {
   limit: number;
   offset: number;
 }
+
+export interface GroupMemberItem {
+  userId: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'member';
+  joinedAt: Date;
+}
+
+export interface GroupDetailsResult {
+  groupId: string;
+  name: string;
+  description: string | null;
+  adminId: string;
+  members: GroupMemberItem[];
+  createdAt: Date;
+}

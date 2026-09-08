@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { body, query, validationResult } from 'express-validator';
+import { body, param, query, validationResult } from 'express-validator';
 import type { RequestHandler } from 'express';
 
-import { createGroup, listGroups } from '../controllers/group.controller.js';
+import { createGroup, getGroupDetails, listGroups } from '../controllers/group.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { HttpError } from '../utils/http-error.js';
 
@@ -52,4 +52,12 @@ groupRouter.get(
   ],
   validate(),
   listGroups,
+);
+
+groupRouter.get(
+  '/:groupId',
+  authenticate,
+  [param('groupId').isUUID().withMessage('Invalid group id')],
+  validate(),
+  getGroupDetails,
 );
