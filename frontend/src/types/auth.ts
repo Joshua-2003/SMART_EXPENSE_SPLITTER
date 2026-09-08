@@ -35,3 +35,17 @@ export interface UpdateProfilePayload {
   name?: string;
   email?: string;
 }
+
+export interface ProfileResult {
+  userId: string;
+  email: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface UpdateProfileResult {
+  userId: string;
+  email: string;
+  name: string;
+  updatedAt: string;
+}

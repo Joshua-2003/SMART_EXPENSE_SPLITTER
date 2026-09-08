@@ -12,6 +12,7 @@ import { MembersPage } from '../pages/members/MembersPage';
 import { SettlementPage } from '../pages/settlement/SettlementPage';
 import { AccountabilityPage } from '../pages/accountability/AccountabilityPage';
 import { GroupsPage } from '../pages/groups/GroupsPage';
+import { ProfilePage } from '../pages/profile/ProfilePage';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { SignupPage } from '../pages/auth/SignupPage';
 import { NotFoundPage } from '../pages/errors/NotFoundPage';
@@ -37,6 +38,7 @@ export const AppRoutes: React.FC = () => {
           <Route path={ROUTES.SETTLEMENT} element={<SettlementPage />} />
           <Route path={ROUTES.ACCOUNTABILITY} element={<AccountabilityPage />} />
           <Route path={ROUTES.GROUPS} element={<GroupsPage />} />
+          <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
         </Route>
       </Route>
 

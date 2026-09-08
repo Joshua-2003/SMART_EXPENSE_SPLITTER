@@ -15,6 +15,7 @@ import {
   Check,
   LogOut,
   FolderPlus,
+  UserCog,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setCurrentUser, logout } from '../store/slices/authSlice';
@@ -71,6 +72,7 @@ export const MainLayout: React.FC = () => {
       badge: 'Core',
     },
     { label: 'All Groups', path: ROUTES.GROUPS, icon: FolderKanban },
+    { label: 'Profile', path: ROUTES.PROFILE, icon: UserCog },
   ];
 
   const handleSelectGroup = (g: Group) => {
@@ -95,6 +97,7 @@ export const MainLayout: React.FC = () => {
     if (p.includes('/settlement')) return 'Settlement Matrix';
     if (p.includes('/accountability')) return 'Accountability & Overdue';
     if (p.includes('/groups')) return 'Group Spaces';
+    if (p.includes('/profile')) return 'Profile Settings';
     return 'Dashboard Overview';
   };
 

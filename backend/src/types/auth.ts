@@ -29,3 +29,22 @@ export interface LoginResult {
   token: string;
   expiresIn: number;
 }
+
+export interface ProfileResult {
+  userId: string;
+  email: string;
+  name: string;
+  createdAt: Date;
+}
+
+export interface UpdateProfileInput {
+  name?: string;
+  email?: string;
+}
+
+export interface UpdateProfileResult {
+  userId: string;
+  email: string;
+  name: string;
+  updatedAt: Date;
+}

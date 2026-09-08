@@ -7,6 +7,7 @@ export const ROUTES = {
   SETTLEMENT: '/settlement',
   ACCOUNTABILITY: '/accountability',
   GROUPS: '/groups',
+  PROFILE: '/profile',
   LOGIN: '/auth/login',
   SIGNUP: '/auth/signup',
 } as const;
