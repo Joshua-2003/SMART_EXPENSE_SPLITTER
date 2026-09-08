@@ -24,5 +24,5 @@ export const env = {
   databaseUrl: process.env.DATABASE_URL,
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
-  jwtSecret: process.env.JWT_SECRET,
+  jwtSecret: process.env.JWT_SECRET as string,
 } as const;

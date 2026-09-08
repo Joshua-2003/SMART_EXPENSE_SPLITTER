@@ -27,27 +27,27 @@ This project delivers a group expense management system for friends, roommates, 
 
 ## Complete Backlog Table
 
-| ID | Module | Phase | Priority | Title | Complexity |
-|---|---|---|---|---|---|
-| AUTH-001 | AUTH | Phase 1 | P0 | User Signup | M |
-| AUTH-002 | AUTH | Phase 1 | P0 | User Login | M |
-| AUTH-003 | AUTH | Phase 1 | P1 | User Profile Retrieval and Update | M |
-| GROUP-001 | GROUP | Phase 2 | P0 | Create Group | M |
-| GROUP-002 | GROUP | Phase 2 | P0 | List Groups for Authenticated User | S |
-| GROUP-003 | GROUP | Phase 2 | P0 | Get Group Details and Members | M |
-| GROUP-004 | GROUP | Phase 2 | P1 | Update Group Details (Admin Only) | S |
-| GROUP-005 | GROUP | Phase 2 | P1 | Add and Remove Group Members | M |
-| EXP-001 | EXPENSE | Phase 2 | P0 | Create Shared Expense | M |
-| EXP-002 | EXPENSE | Phase 2 | P0 | List Group Expenses | S |
-| EXP-003 | EXPENSE | Phase 2 | P1 | Get Expense Details | S |
-| PAY-001 | PAYMENT | Phase 3 | P0 | Mark Payment as Completed | M |
-| PAY-002 | PAYMENT | Phase 3 | P0 | Get Personal Balance in Group | S |
-| PAY-003 | PAYMENT | Phase 3 | P1 | Get Group Settlement Status | M |
-| ACC-001 | ACCOUNTABILITY | Phase 3 | P1 | Get Member Payment History | M |
-| ACC-002 | ACCOUNTABILITY | Phase 3 | P1 | Get Overdue Balances | M |
-| ACC-003 | ACCOUNTABILITY | Phase 3 | P1 | Get Member Reliability Indicator | M |
-| DASH-001 | DASHBOARD | Phase 4 | P0 | Get Group Dashboard | M |
-| NOTIF-001 | NOTIFICATION | Phase 4 | P1 | Manage User Notifications | M |
+| ID | Module | Phase | Priority | Title | Complexity | Status |
+|---|---|---|---|---|---|---|
+| AUTH-001 | AUTH | Phase 1 | P0 | User Signup | M | Done |
+| AUTH-002 | AUTH | Phase 1 | P0 | User Login | M | Not Started |
+| AUTH-003 | AUTH | Phase 1 | P1 | User Profile Retrieval and Update | M | Not Started |
+| GROUP-001 | GROUP | Phase 2 | P0 | Create Group | M | Not Started |
+| GROUP-002 | GROUP | Phase 2 | P0 | List Groups for Authenticated User | S | Not Started |
+| GROUP-003 | GROUP | Phase 2 | P0 | Get Group Details and Members | M | Not Started |
+| GROUP-004 | GROUP | Phase 2 | P1 | Update Group Details (Admin Only) | S | Not Started |
+| GROUP-005 | GROUP | Phase 2 | P1 | Add and Remove Group Members | M | Not Started |
+| EXP-001 | EXPENSE | Phase 2 | P0 | Create Shared Expense | M | Not Started |
+| EXP-002 | EXPENSE | Phase 2 | P0 | List Group Expenses | S | Not Started |
+| EXP-003 | EXPENSE | Phase 2 | P1 | Get Expense Details | S | Not Started |
+| PAY-001 | PAYMENT | Phase 3 | P0 | Mark Payment as Completed | M | Not Started |
+| PAY-002 | PAYMENT | Phase 3 | P0 | Get Personal Balance in Group | S | Not Started |
+| PAY-003 | PAYMENT | Phase 3 | P1 | Get Group Settlement Status | M | Not Started |
+| ACC-001 | ACCOUNTABILITY | Phase 3 | P1 | Get Member Payment History | M | Not Started |
+| ACC-002 | ACCOUNTABILITY | Phase 3 | P1 | Get Overdue Balances | M | Not Started |
+| ACC-003 | ACCOUNTABILITY | Phase 3 | P1 | Get Member Reliability Indicator | M | Not Started |
+| DASH-001 | DASHBOARD | Phase 4 | P0 | Get Group Dashboard | M | Not Started |
+| NOTIF-001 | NOTIFICATION | Phase 4 | P1 | Manage User Notifications | M | Not Started |
 
 ## Phase 1
 
@@ -59,6 +59,7 @@ This project delivers a group expense management system for friends, roommates, 
 - Phase: Phase 1
 - Priority: P0
 - Complexity: M
+- Status: Done (2026-09-08)
 
 #### User Story
 > As a new user, I want to create an account so that I can join groups and manage shared expenses.
@@ -952,3 +953,4 @@ DASH-001
 | Version | Date | Changes |
 |---|---|---|
 | 1.0 | 2026-09-08 | Initial backlog generation from PRD, System Design, database schema, and API contract. |
+| 1.1 | 2026-09-08 | AUTH-001 (User Signup) completed: backend signup endpoint + frontend wiring. |

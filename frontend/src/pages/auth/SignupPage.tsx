@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { loginSuccess, setLoading } from '../../store/slices/authSlice';
 import { addToast } from '../../store/slices/uiSlice';
 import { ROUTES } from '../../constants/routes';
+import { signup } from '../../services/auth.service';
 
 export const SignupPage: React.FC = () => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ export const SignupPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -34,31 +35,41 @@ export const SignupPage: React.FC = () => {
 
     dispatch(setLoading(true));
 
-    // Simulate API registration response (POST /api/auth/signup)
-    setTimeout(() => {
-      const newUser = {
-        id: `user-${Date.now()}`,
+    try {
+      const result = await signup({
         name: name.trim(),
         email: email.trim(),
-        createdAt: new Date().toISOString(),
-      };
+        password,
+      });
+
+      localStorage.setItem('smart_splitter_token', result.token);
 
       dispatch(
         loginSuccess({
-          user: newUser,
-          token: `mock-jwt-token-${newUser.id}`,
+          user: {
+            id: result.userId,
+            name: result.name,
+            email: result.email,
+            createdAt: result.createdAt,
+          },
+          token: result.token,
         })
       );
-      dispatch(setLoading(false));
       dispatch(
         addToast({
           type: 'success',
           title: 'Account created',
-          message: `Welcome to Smart Expense Splitter, ${newUser.name}!`,
+          message: `Welcome to Smart Expense Splitter, ${result.name}!`,
         })
       );
       navigate(ROUTES.DASHBOARD);
-    }, 450);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Unable to create account. Please try again.';
+      setError(message);
+    } finally {
+      dispatch(setLoading(false));
+    }
   };
 
   return (
