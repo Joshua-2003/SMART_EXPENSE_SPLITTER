@@ -27,6 +27,7 @@ Rules:
 - Follow the existing project conventions and architecture.
 - Keep the scope tight and focused on this item only.
 - Validate with the smallest relevant command or check.
+- After successful completion, update the backlog status in docs/BACKLOG.md for this item to reflect that it is done.
 
 Backlog item:
 - Backlog ID: [BACKLOG_ID]
@@ -37,6 +38,7 @@ Expected outcome:
 - Complete the implementation for this backlog item.
 - Make sure the behavior matches the project requirements and contract.
 - Keep the solution production-appropriate and consistent with the current codebase.
+- Update docs/BACKLOG.md to mark this backlog item as completed.
 - Provide a brief summary of the work done and the validation performed.
 ```
 
@@ -65,16 +67,18 @@ Rules:
 - Follow the existing project conventions and architecture.
 - Keep the scope tight and focused on this item only.
 - Validate with the smallest relevant command or check.
+- After successful completion, update the backlog status in docs/BACKLOG.md for this item to reflect that it is done.
 
 Backlog item:
-- Backlog ID: AUTH-002
-- Title: User Login
-- Module: AUTH
+- Backlog ID: [BACKLOG_ID]
+- Title: [BACKLOG_TITLE]
+- Module: [MODULE_NAME]
 
 Expected outcome:
 - Complete the implementation for this backlog item.
 - Make sure the behavior matches the project requirements and contract.
 - Keep the solution production-appropriate and consistent with the current codebase.
+- Update docs/BACKLOG.md to mark this backlog item as completed.
 - Provide a brief summary of the work done and the validation performed.
 ```
 
@@ -88,3 +92,5 @@ Copy the template, replace only:
 - [MODULE_NAME]
 
 Then send it to the AI implementation agent.
+
+Important: after the item is completed, the implementation agent should also update the corresponding status in docs/BACKLOG.md.
