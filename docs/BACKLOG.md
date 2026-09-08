@@ -30,7 +30,7 @@ This project delivers a group expense management system for friends, roommates, 
 | ID | Module | Phase | Priority | Title | Complexity | Status |
 |---|---|---|---|---|---|---|
 | AUTH-001 | AUTH | Phase 1 | P0 | User Signup | M | Done |
-| AUTH-002 | AUTH | Phase 1 | P0 | User Login | M | Not Started |
+| AUTH-002 | AUTH | Phase 1 | P0 | User Login | M | Done |
 | AUTH-003 | AUTH | Phase 1 | P1 | User Profile Retrieval and Update | M | Not Started |
 | GROUP-001 | GROUP | Phase 2 | P0 | Create Group | M | Not Started |
 | GROUP-002 | GROUP | Phase 2 | P0 | List Groups for Authenticated User | S | Not Started |
@@ -102,6 +102,7 @@ Implement the user registration flow using the documented JWT-based authenticati
 - Phase: Phase 1
 - Priority: P0
 - Complexity: M
+- Status: Done (2026-09-09)
 
 #### User Story
 > As a registered user, I want to log in so that I can securely access my groups and account data.
@@ -954,3 +955,4 @@ DASH-001
 |---|---|---|
 | 1.0 | 2026-09-08 | Initial backlog generation from PRD, System Design, database schema, and API contract. |
 | 1.1 | 2026-09-08 | AUTH-001 (User Signup) completed: backend signup endpoint + frontend wiring. |
+| 1.2 | 2026-09-09 | AUTH-002 (User Login) completed: backend login endpoint + frontend wiring; app now starts unauthenticated. |

@@ -1,8 +1,8 @@
 import bcrypt from 'bcrypt';
 
 import { create, findByEmail } from '../repositories/user.repository.js';
-import type { SignupInput, SignupResult } from '../types/auth.js';
-import { signAccessToken } from '../utils/jwt.js';
+import type { LoginInput, LoginResult, SignupInput, SignupResult } from '../types/auth.js';
+import { signAccessToken, TOKEN_EXPIRES_IN_SECONDS } from '../utils/jwt.js';
 import { HttpError } from '../utils/http-error.js';
 
 const BCRYPT_ROUNDS = 10;
@@ -31,5 +31,29 @@ export async function signup(input: SignupInput): Promise<SignupResult> {
     name: user.name,
     token,
     createdAt: user.createdAt,
+  };
+}
+
+export async function login(input: LoginInput): Promise<LoginResult> {
+  const email = input.email.trim().toLowerCase();
+
+  const user = await findByEmail(email);
+  if (!user) {
+    throw new HttpError(401, 'INVALID_CREDENTIALS', 'Invalid email or password');
+  }
+
+  const passwordMatches = await bcrypt.compare(input.password, user.passwordHash);
+  if (!passwordMatches) {
+    throw new HttpError(401, 'INVALID_CREDENTIALS', 'Invalid email or password');
+  }
+
+  const token = signAccessToken({ userId: user.id, email: user.email });
+
+  return {
+    userId: user.id,
+    email: user.email,
+    name: user.name,
+    token,
+    expiresIn: TOKEN_EXPIRES_IN_SECONDS,
   };
 }

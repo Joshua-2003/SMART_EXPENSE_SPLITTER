@@ -6,18 +6,21 @@ import { Input } from '../../components/ui/Input';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { loginSuccess, setLoading } from '../../store/slices/authSlice';
 import { addToast } from '../../store/slices/uiSlice';
+import { login } from '../../services/auth.service';
 import { ROUTES } from '../../constants/routes';
+
+const TOKEN_STORAGE_KEY = 'smart_splitter_token';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { allUsers, isLoading } = useAppSelector((state) => state.auth);
+  const { isLoading } = useAppSelector((state) => state.auth);
 
-  const [email, setEmail] = useState('alex.rivera@example.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -28,28 +31,38 @@ export const LoginPage: React.FC = () => {
 
     dispatch(setLoading(true));
 
-    // Simulate API authentication response (POST /api/auth/login)
-    setTimeout(() => {
-      const matchedUser = allUsers.find(
-        (u) => u.email.toLowerCase() === email.trim().toLowerCase()
-      ) || allUsers[0];
+    try {
+      const result = await login({
+        email: email.trim(),
+        password,
+      });
+
+      localStorage.setItem(TOKEN_STORAGE_KEY, result.token);
 
       dispatch(
         loginSuccess({
-          user: matchedUser,
-          token: `mock-jwt-token-${matchedUser.id}`,
+          user: {
+            id: result.userId,
+            email: result.email,
+            name: result.name,
+          },
+          token: result.token,
+          expiresIn: result.expiresIn,
         })
       );
-      dispatch(setLoading(false));
       dispatch(
         addToast({
           type: 'success',
           title: 'Welcome back',
-          message: `Signed in as ${matchedUser.name}`,
+          message: `Signed in as ${result.name}`,
         })
       );
       navigate(ROUTES.DASHBOARD);
-    }, 400);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      dispatch(setLoading(false));
+    }
   };
 
   return (

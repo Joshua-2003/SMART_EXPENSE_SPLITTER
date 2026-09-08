@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { body, validationResult } from 'express-validator';
 
-import { signup } from '../controllers/auth.controller.js';
+import { login, signup } from '../controllers/auth.controller.js';
 import { HttpError } from '../utils/http-error.js';
 import type { RequestHandler } from 'express';
 
@@ -16,6 +16,24 @@ const validate = (): RequestHandler => (req, _res, next) => {
 };
 
 export const authRouter = Router();
+
+authRouter.post(
+  '/login',
+  [
+    body('email')
+      .isEmail()
+      .withMessage('Invalid email format')
+      .normalizeEmail()
+      .toLowerCase(),
+    body('password')
+      .isString()
+      .withMessage('Password must be a string')
+      .notEmpty()
+      .withMessage('Password is required'),
+  ],
+  validate(),
+  login,
+);
 
 authRouter.post(
   '/signup',

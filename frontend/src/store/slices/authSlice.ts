@@ -14,14 +14,8 @@ interface AuthState {
 const initialState: AuthState = {
   currentUser: defaultCurrentUser,
   allUsers: mockUsers,
-  session: {
-    userId: defaultCurrentUser.id,
-    email: defaultCurrentUser.email,
-    name: defaultCurrentUser.name,
-    token: 'mock-jwt-token-alex-rivera',
-    expiresIn: 86400,
-  },
-  isAuthenticated: true,
+  session: null,
+  isAuthenticated: false,
   isLoading: false,
   error: null,
 };
@@ -41,13 +35,17 @@ export const authSlice = createSlice({
       };
       state.isAuthenticated = true;
     },
-    loginSuccess: (state, action: PayloadAction<{ user: User; token: string }>) => {
+    loginSuccess: (
+      state,
+      action: PayloadAction<{ user: User; token: string; expiresIn?: number }>
+    ) => {
       state.currentUser = action.payload.user;
       state.session = {
         userId: action.payload.user.id,
         email: action.payload.user.email,
         name: action.payload.user.name,
         token: action.payload.token,
+        expiresIn: action.payload.expiresIn,
       };
       state.isAuthenticated = true;
       state.error = null;

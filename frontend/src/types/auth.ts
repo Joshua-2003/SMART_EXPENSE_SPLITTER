@@ -8,7 +8,7 @@ export interface User {
   email: string;
   name: string;
   avatarUrl?: string;
-  createdAt: string;
+  createdAt?: string;
   updatedAt?: string;
 }
 
