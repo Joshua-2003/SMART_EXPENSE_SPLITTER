@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { X, FolderPlus } from 'lucide-react';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { addGroup, setCurrentGroup } from '../../store/slices/groupsSlice';
+import { useAppDispatch } from '../../store/hooks';
+import { addGroup } from '../../store/slices/groupsSlice';
 import { addToast } from '../../store/slices/uiSlice';
+import { createGroup } from '../../services/group.service';
 import { Group } from '../../types';
 
 interface CreateGroupModalProps {
@@ -12,7 +13,6 @@ interface CreateGroupModalProps {
 
 export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ isOpen, onClose }) => {
   const dispatch = useAppDispatch();
-  const { currentUser } = useAppSelector((state) => state.auth);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -21,8 +21,10 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ isOpen, onCl
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
     if (!name.trim()) {
       setError('Please provide a group name.');
       return;
@@ -30,30 +32,40 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ isOpen, onCl
 
     setIsSubmitting(true);
 
-    const newGroup: Group = {
-      id: `group-${Date.now()}`,
-      name: name.trim(),
-      description: description.trim(),
-      currencySymbol: '₱',
-      adminId: currentUser.id,
-      memberCount: 1,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const result = await createGroup({
+        name: name.trim(),
+        description: description.trim() || undefined,
+      });
 
-    dispatch(addGroup(newGroup));
-    dispatch(setCurrentGroup(newGroup));
-    dispatch(
-      addToast({
-        type: 'success',
-        title: 'Group Created',
-        message: `Successfully created "${newGroup.name}" with you as admin.`,
-      })
-    );
+      const newGroup: Group = {
+        id: result.groupId,
+        name: result.name,
+        description: result.description,
+        adminId: result.adminId,
+        memberCount: 1,
+        currencySymbol: '₱',
+        role: 'admin',
+        createdAt: result.createdAt,
+      };
 
-    setName('');
-    setDescription('');
-    setIsSubmitting(false);
-    onClose();
+      dispatch(addGroup(newGroup));
+      dispatch(
+        addToast({
+          type: 'success',
+          title: 'Group Created',
+          message: `Successfully created "${newGroup.name}" with you as admin.`,
+        })
+      );
+
+      setName('');
+      setDescription('');
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create group.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

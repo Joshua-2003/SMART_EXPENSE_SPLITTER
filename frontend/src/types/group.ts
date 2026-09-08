@@ -29,6 +29,14 @@ export interface CreateGroupPayload {
   description?: string;
 }
 
+export interface CreateGroupResult {
+  groupId: string;
+  name: string;
+  description: string | null;
+  adminId: string;
+  createdAt: string;
+}
+
 export interface UpdateGroupPayload {
   name?: string;
   description?: string;

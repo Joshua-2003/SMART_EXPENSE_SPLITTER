@@ -32,7 +32,7 @@ This project delivers a group expense management system for friends, roommates, 
 | AUTH-001 | AUTH | Phase 1 | P0 | User Signup | M | Done |
 | AUTH-002 | AUTH | Phase 1 | P0 | User Login | M | Done |
 | AUTH-003 | AUTH | Phase 1 | P1 | User Profile Retrieval and Update | M | Done |
-| GROUP-001 | GROUP | Phase 2 | P0 | Create Group | M | Not Started |
+| GROUP-001 | GROUP | Phase 2 | P0 | Create Group | M | Done |
 | GROUP-002 | GROUP | Phase 2 | P0 | List Groups for Authenticated User | S | Not Started |
 | GROUP-003 | GROUP | Phase 2 | P0 | Get Group Details and Members | M | Not Started |
 | GROUP-004 | GROUP | Phase 2 | P1 | Update Group Details (Admin Only) | S | Not Started |
@@ -188,6 +188,7 @@ Implement the authenticated profile endpoints for fetching the current user and 
 - Phase: Phase 2
 - Priority: P0
 - Complexity: M
+- Status: Done (2026-09-09)
 
 #### User Story
 > As an authenticated user, I want to create a group so that I can organize shared expenses with others.
@@ -958,3 +959,4 @@ DASH-001
 | 1.1 | 2026-09-08 | AUTH-001 (User Signup) completed: backend signup endpoint + frontend wiring. |
 | 1.2 | 2026-09-09 | AUTH-002 (User Login) completed: backend login endpoint + frontend wiring; app now starts unauthenticated. |
 | 1.3 | 2026-09-09 | AUTH-003 (User Profile Retrieval and Update) completed: protected GET /users/me + PATCH /users/{userId}, auth middleware, Profile page. |
+| 1.4 | 2026-09-09 | GROUP-001 (Create Group) completed: POST /groups with transactional group + admin membership creation, Create Group modal wired to real API. |
