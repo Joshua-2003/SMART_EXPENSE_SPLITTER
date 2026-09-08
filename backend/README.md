@@ -79,10 +79,10 @@ npm run dev
 Expected output:
 
 ```text
-Server running on http://localhost:3000
+Server running on http://localhost:4000
 ```
 
-The port can be changed with the `PORT` environment variable. The server currently exposes no API routes.
+The port can be changed with the `PORT` environment variable. The frontend Vite dev server runs on port 3000 and proxies `/api` requests to this backend. The server currently exposes no API routes.
 
 ## Available Scripts
 
