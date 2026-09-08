@@ -1,0 +1,6 @@
+{
+  "name": "Smart Expense Splitter",
+  "description": "Group expense management with real-time balance tracking, payment history, and member reliability accountability.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
