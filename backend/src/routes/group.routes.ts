@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { body, validationResult } from 'express-validator';
+import { body, query, validationResult } from 'express-validator';
 import type { RequestHandler } from 'express';
 
-import { createGroup } from '../controllers/group.controller.js';
+import { createGroup, listGroups } from '../controllers/group.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { HttpError } from '../utils/http-error.js';
 
@@ -35,4 +35,21 @@ groupRouter.post(
   ],
   validate(),
   createGroup,
+);
+
+groupRouter.get(
+  '/',
+  authenticate,
+  [
+    query('limit')
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage('Limit must be an integer between 1 and 100'),
+    query('offset')
+      .optional()
+      .isInt({ min: 0 })
+      .withMessage('Offset must be a non-negative integer'),
+  ],
+  validate(),
+  listGroups,
 );

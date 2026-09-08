@@ -33,7 +33,7 @@ This project delivers a group expense management system for friends, roommates, 
 | AUTH-002 | AUTH | Phase 1 | P0 | User Login | M | Done |
 | AUTH-003 | AUTH | Phase 1 | P1 | User Profile Retrieval and Update | M | Done |
 | GROUP-001 | GROUP | Phase 2 | P0 | Create Group | M | Done |
-| GROUP-002 | GROUP | Phase 2 | P0 | List Groups for Authenticated User | S | Not Started |
+| GROUP-002 | GROUP | Phase 2 | P0 | List Groups for Authenticated User | S | Done |
 | GROUP-003 | GROUP | Phase 2 | P0 | Get Group Details and Members | M | Not Started |
 | GROUP-004 | GROUP | Phase 2 | P1 | Update Group Details (Admin Only) | S | Not Started |
 | GROUP-005 | GROUP | Phase 2 | P1 | Add and Remove Group Members | M | Not Started |
@@ -230,6 +230,7 @@ Implement group creation for authenticated users. The API must accept a group na
 - Phase: Phase 2
 - Priority: P0
 - Complexity: S
+- Status: Done (2026-09-09)
 
 #### User Story
 > As a user, I want to view the groups I belong to so that I can navigate my shared expense activities.
@@ -960,3 +961,4 @@ DASH-001
 | 1.2 | 2026-09-09 | AUTH-002 (User Login) completed: backend login endpoint + frontend wiring; app now starts unauthenticated. |
 | 1.3 | 2026-09-09 | AUTH-003 (User Profile Retrieval and Update) completed: protected GET /users/me + PATCH /users/{userId}, auth middleware, Profile page. |
 | 1.4 | 2026-09-09 | GROUP-001 (Create Group) completed: POST /groups with transactional group + admin membership creation, Create Group modal wired to real API. |
+| 1.5 | 2026-09-09 | GROUP-002 (List Groups for Authenticated User) completed: protected paginated GET /groups with role + memberCount, app-wide group list loading in MainLayout with auto-select. |

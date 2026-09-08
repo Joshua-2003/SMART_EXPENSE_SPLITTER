@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   Receipt,
@@ -19,7 +19,12 @@ import {
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setCurrentUser, logout } from '../store/slices/authSlice';
-import { setCurrentGroup } from '../store/slices/groupsSlice';
+import {
+  setCurrentGroup,
+  setGroups,
+  setLoading,
+  setError,
+} from '../store/slices/groupsSlice';
 import {
   setCreateExpenseOpen,
   setCreateGroupOpen,
@@ -36,6 +41,7 @@ import { CreateExpenseModal } from '../components/expenses/CreateExpenseModal';
 import { CreateGroupModal } from '../components/groups/CreateGroupModal';
 import { AddMemberModal } from '../components/members/AddMemberModal';
 import { ToastContainer } from '../components/common/Toast';
+import { listGroups } from '../services/group.service';
 import { Group, User } from '../types';
 
 export const MainLayout: React.FC = () => {
@@ -57,6 +63,28 @@ export const MainLayout: React.FC = () => {
   const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
   const [isPersonaDropdownOpen, setIsPersonaDropdownOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
+  const initialCurrentGroupIdRef = useRef(currentGroup.id);
+
+  useEffect(() => {
+    const loadGroups = async () => {
+      dispatch(setLoading(true));
+      try {
+        const { groups } = await listGroups();
+        dispatch(setGroups(groups));
+        const initialId = initialCurrentGroupIdRef.current;
+        if (groups.length > 0 && !groups.some((g) => g.id === initialId)) {
+          dispatch(setCurrentGroup(groups[0]));
+        }
+      } catch (err) {
+        dispatch(setError(err instanceof Error ? err.message : 'Failed to load groups.'));
+      } finally {
+        dispatch(setLoading(false));
+      }
+    };
+
+    void loadGroups();
+  }, [dispatch]);
 
   const unreadNotifs = notifications.filter((n) => !n.read);
 

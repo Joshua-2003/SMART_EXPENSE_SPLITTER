@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Users, ChevronRight, Edit2, X } from 'lucide-react';
+import { Plus, Users, ChevronRight, Edit2, FolderKanban } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
   setCurrentGroup,
@@ -17,7 +17,7 @@ import { ROUTES } from '../../constants/routes';
 export const GroupsPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { groups, currentGroup } = useAppSelector((state) => state.groups);
+  const { groups, currentGroup, isLoading } = useAppSelector((state) => state.groups);
   const { currentUser } = useAppSelector((state) => state.auth);
 
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
@@ -82,6 +82,33 @@ export const GroupsPage: React.FC = () => {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {isLoading && (
+          <div className="col-span-full flex items-center justify-center gap-2 py-12 text-xs text-slate-500">
+            <span className="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+            Loading your groups...
+          </div>
+        )}
+
+        {!isLoading && groups.length === 0 && (
+          <div className="col-span-full rounded-xl border border-dashed border-slate-300 bg-white p-8 flex flex-col items-center justify-center text-center">
+            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+              <FolderKanban className="w-5 h-5" />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-800">You are not part of any groups yet</h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm leading-relaxed">
+              Create a group to start splitting shared expenses with friends, family, or teammates.
+            </p>
+            <Button
+              variant="primary"
+              size="sm"
+              className="mt-4"
+              onClick={() => dispatch(setCreateGroupOpen(true))}
+              leftIcon={<Plus className="w-4 h-4" />}
+            >
+              Create First Group
+            </Button>
+          </div>
+        )}
         {groups.map((group) => {
           const isActive = group.id === currentGroup.id;
           const isAdmin = group.adminId === currentUser.id;

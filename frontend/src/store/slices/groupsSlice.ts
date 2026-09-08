@@ -30,6 +30,9 @@ export const groupsSlice = createSlice({
       state.groups.unshift(action.payload);
       state.currentGroup = action.payload;
     },
+    setGroups: (state, action: PayloadAction<Group[]>) => {
+      state.groups = action.payload;
+    },
     createGroup: (state, action: PayloadAction<{ name: string; description?: string; adminId: string }>) => {
       const newGroup: Group = {
         id: `grp-${Date.now()}`,
@@ -97,6 +100,7 @@ export const groupsSlice = createSlice({
 export const {
   setCurrentGroup,
   addGroup,
+  setGroups,
   createGroup,
   updateGroupDetails,
   addMember,

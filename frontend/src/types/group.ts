@@ -37,6 +37,23 @@ export interface CreateGroupResult {
   createdAt: string;
 }
 
+export interface GroupListItem {
+  groupId: string;
+  name: string;
+  description: string | null;
+  adminId: string;
+  role: MemberRole;
+  memberCount: number;
+  createdAt: string;
+}
+
+export interface ListGroupsResult {
+  groups: Group[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export interface UpdateGroupPayload {
   name?: string;
   description?: string;
