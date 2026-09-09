@@ -49,3 +49,15 @@ export interface GroupDetailsResult {
   members: GroupMemberItem[];
   createdAt: Date;
 }
+
+export interface UpdateGroupInput {
+  name?: string;
+  description?: string;
+}
+
+export interface UpdateGroupResult {
+  groupId: string;
+  name: string;
+  description: string | null;
+  updatedAt: Date;
+}

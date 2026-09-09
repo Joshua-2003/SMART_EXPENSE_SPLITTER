@@ -7,6 +7,7 @@ import {
   updateGroupDetails,
 } from '../../store/slices/groupsSlice';
 import { setCreateGroupOpen, addToast } from '../../store/slices/uiSlice';
+import { updateGroupDetails as updateGroupDetailsApi } from '../../services/group.service';
 import { Group } from '../../types';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Button } from '../../components/ui/Button';
@@ -23,6 +24,8 @@ export const GroupsPage: React.FC = () => {
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [editName, setEditName] = useState('');
   const [editDesc, setEditDesc] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const handleSelectGroup = (g: Group) => {
     dispatch(setCurrentGroup(g));
@@ -41,26 +44,43 @@ export const GroupsPage: React.FC = () => {
     setEditingGroup(g);
     setEditName(g.name);
     setEditDesc(g.description || '');
+    setEditError(null);
   };
 
-  const handleSaveEdit = (e: React.FormEvent) => {
+  const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingGroup && editName.trim()) {
+    if (!editingGroup || !editName.trim()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setEditError(null);
+
+    try {
+      const result = await updateGroupDetailsApi(editingGroup.id, {
+        name: editName.trim(),
+        description: editDesc.trim(),
+      });
+
       dispatch(
         updateGroupDetails({
-          id: editingGroup.id,
-          name: editName.trim(),
-          description: editDesc.trim(),
+          id: result.groupId,
+          name: result.name,
+          description: result.description,
         })
       );
       dispatch(
         addToast({
           type: 'success',
           title: 'Group Updated',
-          message: `Changes to ${editName} saved successfully.`,
+          message: `Changes to ${result.name} saved successfully.`,
         })
       );
       setEditingGroup(null);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Failed to update group.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -211,16 +231,20 @@ export const GroupsPage: React.FC = () => {
           </div>
 
           <div className="pt-2 flex items-center justify-end gap-2">
+            {editError && (
+              <span className="text-[11px] text-red-600 mr-auto">{editError}</span>
+            )}
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setEditingGroup(null)}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button type="submit" variant="primary" size="sm">
-              Save Changes
+            <Button type="submit" variant="primary" size="sm" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </form>

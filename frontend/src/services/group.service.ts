@@ -6,6 +6,8 @@ import type {
   GroupDetailsApiResult,
   GroupListItem,
   ListGroupsResult,
+  UpdateGroupPayload,
+  UpdateGroupResult,
 } from '../types/group';
 import type { Group, GroupMember } from '../types';
 
@@ -108,4 +110,21 @@ export async function getGroupDetails(groupId: string): Promise<GroupDetailsResu
       joinedAt: m.joinedAt,
     })),
   };
+}
+
+export async function updateGroupDetails(
+  groupId: string,
+  payload: UpdateGroupPayload,
+): Promise<UpdateGroupResult> {
+  const response = await apiClient.patch<
+    ApiResponseSuccess<UpdateGroupResult> | ApiResponseError
+  >(`/groups/${groupId}`, payload);
+
+  const body = response.data;
+
+  if (body.status === 'error') {
+    throw new Error(body.message);
+  }
+
+  return body.data;
 }

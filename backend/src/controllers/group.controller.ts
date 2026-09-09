@@ -70,6 +70,37 @@ export async function getGroupDetails(
   }
 }
 
+export async function updateGroup(
+  req: Request<{ groupId: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const actorId = req.user?.userId;
+    if (!actorId) {
+      throw new Error('Authenticated request is missing a user');
+    }
+
+    const result = await groupService.updateGroup(actorId, req.params.groupId, {
+      name: req.body.name,
+      description: req.body.description,
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        groupId: result.groupId,
+        name: result.name,
+        description: result.description,
+        updatedAt: result.updatedAt.toISOString(),
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function listGroups(
   req: Request,
   res: Response,

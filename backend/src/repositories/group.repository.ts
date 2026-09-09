@@ -1,7 +1,13 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '../db/db.js';
 import { groups, groupMembers, users } from '../models/index.js';
-import type { CreateGroupResult, GroupDetailsResult, GroupListItem, GroupMemberItem } from '../types/group.js';
+import type {
+  CreateGroupResult,
+  GroupDetailsResult,
+  GroupListItem,
+  GroupMemberItem,
+  UpdateGroupResult,
+} from '../types/group.js';
 
 export async function createWithAdmin(
   name: string,
@@ -142,4 +148,29 @@ export async function listMembers(groupId: string): Promise<GroupMemberItem[]> {
     ...row,
     role: row.role as 'admin' | 'member',
   }));
+}
+
+export async function update(
+  groupId: string,
+  data: { name?: string; description?: string | null },
+): Promise<UpdateGroupResult | undefined> {
+  const [group] = await db
+    .update(groups)
+    .set({
+      ...data,
+      updatedAt: new Date(),
+    })
+    .where(eq(groups.id, groupId))
+    .returning();
+
+  if (!group) {
+    return undefined;
+  }
+
+  return {
+    groupId: group.id,
+    name: group.name,
+    description: group.description ?? null,
+    updatedAt: group.updatedAt,
+  };
 }

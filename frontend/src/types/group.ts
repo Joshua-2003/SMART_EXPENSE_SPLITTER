@@ -76,6 +76,13 @@ export interface UpdateGroupPayload {
   description?: string;
 }
 
+export interface UpdateGroupResult {
+  groupId: string;
+  name: string;
+  description: string | null;
+  updatedAt: string;
+}
+
 export interface AddMemberPayload {
   email: string;
 }

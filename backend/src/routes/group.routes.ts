@@ -2,7 +2,12 @@ import { Router } from 'express';
 import { body, param, query, validationResult } from 'express-validator';
 import type { RequestHandler } from 'express';
 
-import { createGroup, getGroupDetails, listGroups } from '../controllers/group.controller.js';
+import {
+  createGroup,
+  getGroupDetails,
+  listGroups,
+  updateGroup,
+} from '../controllers/group.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { HttpError } from '../utils/http-error.js';
 
@@ -60,4 +65,31 @@ groupRouter.get(
   [param('groupId').isUUID().withMessage('Invalid group id')],
   validate(),
   getGroupDetails,
+);
+
+groupRouter.patch(
+  '/:groupId',
+  authenticate,
+  [
+    param('groupId').isUUID().withMessage('Invalid group id'),
+    body('name')
+      .optional()
+      .isString()
+      .withMessage('Name must be a string')
+      .trim()
+      .notEmpty()
+      .withMessage('Name must not be empty'),
+    body('description')
+      .optional()
+      .isString()
+      .withMessage('Description must be a string'),
+    body()
+      .custom((_value, { req }) => {
+        const body = (req.body ?? {}) as Record<string, unknown>;
+        return body.name !== undefined || body.description !== undefined;
+      })
+      .withMessage('Invalid update payload'),
+  ],
+  validate(),
+  updateGroup,
 );
