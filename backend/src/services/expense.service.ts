@@ -1,6 +1,11 @@
 import { findById, findMembership } from '../repositories/group.repository.js';
-import { createWithSplits } from '../repositories/expense.repository.js';
-import type { CreateExpenseInput, CreateExpenseResult } from '../types/expense.js';
+import { createWithSplits, listForGroup } from '../repositories/expense.repository.js';
+import type {
+  CreateExpenseInput,
+  CreateExpenseResult,
+  ListExpensesInput,
+  ListExpensesResult,
+} from '../types/expense.js';
 import { HttpError } from '../utils/http-error.js';
 
 function computeEqualSplits(total: number, count: number): number[] {
@@ -64,4 +69,33 @@ export async function createExpense(
     memberIds,
     assignedAmounts,
   );
+}
+
+export async function listGroupExpenses(
+  actorUserId: string,
+  groupId: string,
+  input: ListExpensesInput,
+): Promise<ListExpensesResult> {
+  const limit = input.limit ?? 50;
+  const offset = input.offset ?? 0;
+  const sortBy = input.sortBy ?? 'date';
+
+  const group = await findById(groupId);
+  if (!group) {
+    throw new HttpError(404, 'NOT_FOUND', 'Group not found');
+  }
+
+  const membership = await findMembership(groupId, actorUserId);
+  if (!membership) {
+    throw new HttpError(403, 'FORBIDDEN', 'User is not a member of this group');
+  }
+
+  const { items, total } = await listForGroup(groupId, limit, offset, sortBy);
+
+  return {
+    expenses: items,
+    total,
+    limit,
+    offset,
+  };
 }

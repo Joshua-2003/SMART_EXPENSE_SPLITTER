@@ -1,6 +1,7 @@
+import { eq, inArray, sql } from 'drizzle-orm';
 import { db } from '../db/db.js';
-import { expenseSplits, expenses } from '../models/index.js';
-import type { CreateExpenseResult } from '../types/expense.js';
+import { expenseSplits, expenses, users } from '../models/index.js';
+import type { CreateExpenseResult, ExpenseListItem, ExpenseSortBy } from '../types/expense.js';
 
 export async function createWithSplits(
   groupId: string,
@@ -43,4 +44,88 @@ export async function createWithSplits(
       })),
     };
   });
+}
+
+export async function listForGroup(
+  groupId: string,
+  limit: number,
+  offset: number,
+  sortBy: ExpenseSortBy,
+): Promise<{ items: ExpenseListItem[]; total: number }> {
+  const orderBy =
+    sortBy === 'amount'
+      ? sql`${expenses.amount} DESC`
+      : sql`${expenses.createdAt} DESC`;
+
+  const rows = await db
+    .select({
+      expenseId: expenses.id,
+      description: expenses.description,
+      amount: expenses.amount,
+      createdBy: expenses.createdBy,
+      createdByName: users.name,
+      createdAt: expenses.createdAt,
+    })
+    .from(expenses)
+    .innerJoin(users, eq(users.id, expenses.createdBy))
+    .where(eq(expenses.groupId, groupId))
+    .orderBy(orderBy)
+    .limit(limit)
+    .offset(offset);
+
+  const [totalRow] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(expenses)
+    .where(eq(expenses.groupId, groupId));
+
+  const expenseIds = rows.map((row) => row.expenseId);
+
+  let splitRows: {
+    splitId: string;
+    expenseId: string;
+    userId: string;
+    userName: string;
+    assignedAmount: string;
+  }[] = [];
+
+  if (expenseIds.length > 0) {
+    splitRows = await db
+      .select({
+        splitId: expenseSplits.id,
+        expenseId: expenseSplits.expenseId,
+        userId: expenseSplits.userId,
+        userName: users.name,
+        assignedAmount: expenseSplits.assignedAmount,
+      })
+      .from(expenseSplits)
+      .innerJoin(users, eq(users.id, expenseSplits.userId))
+      .where(inArray(expenseSplits.expenseId, expenseIds));
+  }
+
+  const splitsByExpense = new Map<string, typeof splitRows>();
+  for (const split of splitRows) {
+    const list = splitsByExpense.get(split.expenseId) ?? [];
+    list.push(split);
+    splitsByExpense.set(split.expenseId, list);
+  }
+
+  const items: ExpenseListItem[] = rows.map((row) => ({
+    expenseId: row.expenseId,
+    description: row.description,
+    amount: row.amount,
+    createdBy: row.createdBy,
+    createdByName: row.createdByName,
+    createdAt: row.createdAt,
+    splits: (splitsByExpense.get(row.expenseId) ?? []).map((split) => ({
+      splitId: split.splitId,
+      userId: split.userId,
+      userName: split.userName,
+      assignedAmount: split.assignedAmount,
+    })),
+  }));
+
+  return {
+    items,
+    total: totalRow?.total ?? 0,
+  };
 }

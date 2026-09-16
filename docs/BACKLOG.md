@@ -38,7 +38,7 @@ This project delivers a group expense management system for friends, roommates, 
 | GROUP-004 | GROUP | Phase 2 | P1 | Update Group Details (Admin Only) | S | Done |
 | GROUP-005 | GROUP | Phase 2 | P1 | Add and Remove Group Members | M | Done |
 | EXP-001 | EXPENSE | Phase 2 | P0 | Create Shared Expense | M | Done |
-| EXP-002 | EXPENSE | Phase 2 | P0 | List Group Expenses | S | Not Started |
+| EXP-002 | EXPENSE | Phase 2 | P0 | List Group Expenses | S | Done |
 | EXP-003 | EXPENSE | Phase 2 | P1 | Get Expense Details | S | Not Started |
 | PAY-001 | PAYMENT | Phase 3 | P0 | Mark Payment as Completed | M | Not Started |
 | PAY-002 | PAYMENT | Phase 3 | P0 | Get Personal Balance in Group | S | Not Started |
@@ -448,6 +448,7 @@ Implement the expense creation flow for authenticated group members. The API mus
 - Phase: Phase 2
 - Priority: P0
 - Complexity: S
+- Status: Done (2026-09-16)
 
 #### User Story
 > As a group member, I want to view the expense history so that I can understand recent and cumulative spending.
@@ -970,3 +971,4 @@ DASH-001
 | 1.7 | 2026-09-09 | GROUP-004 (Update Group Details, Admin Only) completed: protected PATCH /groups/{groupId} with admin-only access control and partial name/description updates, edit modal wired to the live API in GroupsPage. |
 | 1.8 | 2026-09-10 | GROUP-005 (Add and Remove Group Members) completed: protected POST /groups/{groupId}/members and DELETE /groups/{groupId}/members/{userId} with admin-only access control, duplicate prevention, and self-removal guard; AddMemberModal and MembersPage wired to real API. |
 | 1.9 | 2026-09-16 | EXP-001 (Create Shared Expense) completed: protected POST /groups/{groupId}/expenses with member-only access control, express-validator rules, transactional expense + equal-split creation (cents-based with remainder to first member); manual split assignment rejected as out of MVP scope; CreateExpenseModal rewired to the real API and limited to equal split. |
+| 1.10 | 2026-09-16 | EXP-002 (List Group Expenses) completed: protected GET /groups/{groupId}/expenses with member-only access control, express-validator query rules (limit/offset/sortBy), paginated listing with creator names and per-expense split breakdown sorted by date or amount descending; ExpensesPage reloads real expense data on group change. |

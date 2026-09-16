@@ -10,7 +10,7 @@ import {
   removeMember,
   updateGroup,
 } from '../controllers/group.controller.js';
-import { createExpense } from '../controllers/expense.controller.js';
+import { createExpense, listExpenses } from '../controllers/expense.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { HttpError } from '../utils/http-error.js';
 
@@ -158,4 +158,26 @@ groupRouter.post(
   ],
   validate(),
   createExpense,
+);
+
+groupRouter.get(
+  '/:groupId/expenses',
+  authenticate,
+  [
+    param('groupId').isUUID().withMessage('Invalid group id'),
+    query('limit')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Limit must be a positive integer'),
+    query('offset')
+      .optional()
+      .isInt({ min: 0 })
+      .withMessage('Offset must be a non-negative integer'),
+    query('sortBy')
+      .optional()
+      .isIn(['date', 'amount'])
+      .withMessage('sortBy must be either "date" or "amount"'),
+  ],
+  validate(),
+  listExpenses,
 );

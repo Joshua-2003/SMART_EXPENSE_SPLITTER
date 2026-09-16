@@ -1,20 +1,44 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, Filter, Calendar, CheckCircle2, Clock } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { setSelectedExpense } from '../../store/slices/expensesSlice';
+import {
+  setSelectedExpense,
+  setExpenses,
+  setLoading,
+  setError,
+} from '../../store/slices/expensesSlice';
 import { setCreateExpenseOpen } from '../../store/slices/uiSlice';
 import { Expense } from '../../types';
 import { DataTable, Column } from '../../components/common/DataTable';
 import { FilterBar } from '../../components/common/FilterBar';
 import { PageHeader } from '../../components/common/PageHeader';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { LoadingState } from '../../components/common/LoadingState';
 import { Button } from '../../components/ui/Button';
 import { ExpenseDetailModal } from '../../components/expenses/ExpenseDetailModal';
+import { listGroupExpenses } from '../../services/expense.service';
 
 export const ExpensesPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { expenses, selectedExpense } = useAppSelector((state) => state.expenses);
+  const { expenses, selectedExpense, isLoading } = useAppSelector((state) => state.expenses);
   const { currentGroup } = useAppSelector((state) => state.groups);
+
+  useEffect(() => {
+    const loadExpenses = async () => {
+      dispatch(setLoading(true));
+      try {
+        const result = await listGroupExpenses(currentGroup.id, { sortBy: 'date' });
+        dispatch(setExpenses(result.expenses));
+      } catch (err) {
+        dispatch(setError(err instanceof Error ? err.message : 'Failed to load expenses.'));
+        dispatch(setExpenses([]));
+      } finally {
+        dispatch(setLoading(false));
+      }
+    };
+
+    void loadExpenses();
+  }, [currentGroup.id, dispatch]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -151,14 +175,18 @@ export const ExpensesPage: React.FC = () => {
         }}
       />
 
-      <DataTable
-        columns={columns}
-        data={filteredExpenses}
-        keyExtractor={(exp) => exp.id}
-        onRowClick={(exp) => dispatch(setSelectedExpense(exp))}
-        emptyTitle="No expenses found"
-        emptyDescription="Try adjusting your search criteria or record a new expense."
-      />
+      {isLoading ? (
+        <LoadingState rows={5} type="table" />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={filteredExpenses}
+          keyExtractor={(exp) => exp.id}
+          onRowClick={(exp) => dispatch(setSelectedExpense(exp))}
+          emptyTitle="No expenses found"
+          emptyDescription="Try adjusting your search criteria or record a new expense."
+        />
+      )}
 
       {/* Expense Detail Modal */}
       <ExpenseDetailModal

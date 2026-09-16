@@ -1,4 +1,5 @@
 export type SplitType = 'equal' | 'manual';
+export type ExpenseSortBy = 'date' | 'amount';
 
 export interface ExpenseMemberSplit {
   userId: string;
@@ -26,4 +27,34 @@ export interface CreateExpenseResult {
   createdBy: string;
   createdAt: Date;
   splits: ExpenseSplitResult[];
+}
+
+export interface ListExpensesInput {
+  limit?: number;
+  offset?: number;
+  sortBy?: ExpenseSortBy;
+}
+
+export interface ExpenseSplitListItem {
+  splitId: string;
+  userId: string;
+  userName: string;
+  assignedAmount: string;
+}
+
+export interface ExpenseListItem {
+  expenseId: string;
+  description: string;
+  amount: string;
+  createdBy: string;
+  createdByName: string;
+  createdAt: Date;
+  splits: ExpenseSplitListItem[];
+}
+
+export interface ListExpensesResult {
+  expenses: ExpenseListItem[];
+  total: number;
+  limit: number;
+  offset: number;
 }
