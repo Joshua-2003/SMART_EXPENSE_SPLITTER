@@ -1,7 +1,8 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, count, eq, sql } from 'drizzle-orm';
 import { db } from '../db/db.js';
 import { groups, groupMembers, users } from '../models/index.js';
 import type {
+  AddMemberResult,
   CreateGroupResult,
   GroupDetailsResult,
   GroupListItem,
@@ -173,4 +174,47 @@ export async function update(
     description: group.description ?? null,
     updatedAt: group.updatedAt,
   };
+}
+
+export async function addMember(
+  groupId: string,
+  userId: string,
+): Promise<AddMemberResult> {
+  await db.insert(groupMembers).values({
+    groupId,
+    userId,
+    role: 'member',
+  });
+
+  const [member] = await db
+    .select({
+      userId: users.id,
+      name: users.name,
+      email: users.email,
+      role: groupMembers.role,
+      joinedAt: groupMembers.joinedAt,
+    })
+    .from(groupMembers)
+    .innerJoin(users, eq(users.id, groupMembers.userId))
+    .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
+    .limit(1);
+
+  return {
+    userId: member.userId,
+    name: member.name,
+    email: member.email,
+    role: member.role as 'member',
+    joinedAt: member.joinedAt,
+  };
+}
+
+export async function removeMember(
+  groupId: string,
+  userId: string,
+): Promise<boolean> {
+  const result = await db
+    .delete(groupMembers)
+    .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)));
+
+  return (result.rowCount ?? 0) > 0;
 }

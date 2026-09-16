@@ -1,10 +1,14 @@
-import { findById, findByEmail, update } from '../repositories/user.repository.js';
+import { findById, findByEmail, listUsers as repoListUsers, update } from '../repositories/user.repository.js';
 import type {
+  ListUsersInput,
+  ListUsersResult,
   ProfileResult,
   UpdateProfileInput,
   UpdateProfileResult,
 } from '../types/auth.js';
 import { HttpError } from '../utils/http-error.js';
+
+const MAX_DIRECTORY_LIMIT = 100;
 
 export async function getProfile(userId: string): Promise<ProfileResult> {
   const user = await findById(userId);
@@ -61,5 +65,20 @@ export async function updateProfile(
     email: user.email,
     name: user.name,
     updatedAt: user.updatedAt,
+  };
+}
+
+export async function listUsers(input: ListUsersInput): Promise<ListUsersResult> {
+  const limit = Math.min(input.limit ?? 50, MAX_DIRECTORY_LIMIT);
+  const offset = input.offset ?? 0;
+  const search = input.search?.trim() || undefined;
+
+  const { items, total } = await repoListUsers(search, limit, offset);
+
+  return {
+    users: items,
+    total,
+    limit,
+    offset,
   };
 }

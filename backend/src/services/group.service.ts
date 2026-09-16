@@ -1,12 +1,16 @@
 import {
+  addMember as repoAddMember,
   createWithAdmin,
   findById,
   findMembership,
   listForUser,
+  removeMember as repoRemoveMember,
   update,
 } from '../repositories/group.repository.js';
-import { findById as findUserById } from '../repositories/user.repository.js';
+import { findById as findUserById, findByEmail } from '../repositories/user.repository.js';
 import type {
+  AddMemberInput,
+  AddMemberResult,
   CreateGroupInput,
   CreateGroupResult,
   GroupDetailsResult,
@@ -95,4 +99,62 @@ export async function listGroups(
     limit,
     offset,
   };
+}
+
+export async function addMember(
+  actorUserId: string,
+  groupId: string,
+  input: AddMemberInput,
+): Promise<AddMemberResult> {
+  const group = await findById(groupId);
+  if (!group) {
+    throw new HttpError(404, 'NOT_FOUND', 'Group not found');
+  }
+
+  const actorMembership = await findMembership(groupId, actorUserId);
+  if (!actorMembership || actorMembership.role !== 'admin') {
+    throw new HttpError(403, 'FORBIDDEN', 'User is not admin of this group');
+  }
+
+  const targetUser = await findByEmail(input.email.trim());
+  if (!targetUser) {
+    throw new HttpError(400, 'VALIDATION_ERROR', 'User not found with the provided email');
+  }
+
+  const existingMembership = await findMembership(groupId, targetUser.id);
+  if (existingMembership) {
+    throw new HttpError(409, 'CONFLICT', 'User is already a member of this group');
+  }
+
+  return repoAddMember(groupId, targetUser.id);
+}
+
+export async function removeMember(
+  actorUserId: string,
+  groupId: string,
+  targetUserId: string,
+): Promise<void> {
+  const group = await findById(groupId);
+  if (!group) {
+    throw new HttpError(404, 'NOT_FOUND', 'Group not found');
+  }
+
+  const actorMembership = await findMembership(groupId, actorUserId);
+  if (!actorMembership || actorMembership.role !== 'admin') {
+    throw new HttpError(403, 'FORBIDDEN', 'User is not admin of this group');
+  }
+
+  if (targetUserId === actorUserId) {
+    throw new HttpError(400, 'VALIDATION_ERROR', 'Admin cannot remove themselves from the group');
+  }
+
+  const targetMembership = await findMembership(groupId, targetUserId);
+  if (!targetMembership) {
+    throw new HttpError(404, 'NOT_FOUND', 'Member not found in this group');
+  }
+
+  const removed = await repoRemoveMember(groupId, targetUserId);
+  if (!removed) {
+    throw new HttpError(404, 'NOT_FOUND', 'Member not found in this group');
+  }
 }

@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, UserPlus, AlertCircle } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { addMember } from '../../store/slices/groupsSlice';
-import { addNotification } from '../../store/slices/accountabilitySlice';
 import { addToast } from '../../store/slices/uiSlice';
-import { GroupMember } from '../../types';
+import { GroupMember, User } from '../../types';
+import { addGroupMember } from '../../services/group.service';
+import { listUsers } from '../../services/user.service';
 
 interface AddMemberModalProps {
   isOpen: boolean;
@@ -14,20 +15,48 @@ interface AddMemberModalProps {
 export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose }) => {
   const dispatch = useAppDispatch();
   const { currentGroup, members } = useAppSelector((state) => state.groups);
-  const { allUsers } = useAppSelector((state) => state.auth);
 
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [directoryUsers, setDirectoryUsers] = useState<User[]>([]);
+  const [isDirectoryLoading, setIsDirectoryLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    setIsDirectoryLoading(true);
+    listUsers()
+      .then(({ users }) => {
+        if (cancelled) return;
+        setDirectoryUsers(
+          users.map((u) => ({
+            id: u.userId,
+            email: u.email,
+            name: u.name,
+            createdAt: u.createdAt,
+          }))
+        );
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setDirectoryUsers([]);
+      })
+      .finally(() => {
+        if (!cancelled) setIsDirectoryLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  // Find users who aren't in this group yet
-  const availableUsers = allUsers.filter(
+  const availableUsers = directoryUsers.filter(
     (u) => !members.some((m) => m.userId === u.id || m.email.toLowerCase() === u.email.toLowerCase())
   );
 
-  const handleAddMember = (userEmail: string) => {
+  const handleAddMember = async (userEmail: string) => {
     setError(null);
     const clean = userEmail.trim().toLowerCase();
     if (!clean) {
@@ -42,51 +71,40 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose 
 
     setIsSubmitting(true);
 
-    const existingUser = allUsers.find((u) => u.email.toLowerCase() === clean);
-    const memberName = existingUser
-      ? existingUser.name
-      : clean.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    try {
+      const result = await addGroupMember(currentGroup.id, { email: clean });
 
-    const newMember: GroupMember = {
-      userId: existingUser ? existingUser.id : `user-${Date.now()}`,
-      name: memberName,
-      email: clean,
-      role: 'member',
-      balance: 0,
-      joinedAt: new Date().toISOString(),
-      avatarUrl: existingUser?.avatarUrl,
-    };
+      const newMember: GroupMember = {
+        userId: result.userId,
+        name: result.name,
+        email: result.email,
+        role: result.role,
+        balance: 0,
+        joinedAt: result.joinedAt,
+      };
 
-    dispatch(addMember(newMember));
+      dispatch(addMember(newMember));
 
-    dispatch(
-      addNotification({
-        notificationId: `notif-${Date.now()}`,
-        type: 'member_joined',
-        groupId: currentGroup.id,
-        groupName: currentGroup.name,
-        message: `${newMember.name} was added to ${currentGroup.name}`,
-        read: false,
-        createdAt: new Date().toISOString(),
-      })
-    );
+      dispatch(
+        addToast({
+          type: 'success',
+          title: 'Member Added',
+          message: `${result.name} joined ${currentGroup.name}.`,
+        })
+      );
 
-    dispatch(
-      addToast({
-        type: 'success',
-        title: 'Member Added',
-        message: `${newMember.name} joined ${currentGroup.name}.`,
-      })
-    );
-
-    setEmail('');
-    setIsSubmitting(false);
-    onClose();
+      setEmail('');
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add member.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleAddMember(email);
+    void handleAddMember(email);
   };
 
   return (
@@ -133,17 +151,25 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose 
             />
           </div>
 
-          {availableUsers.length > 0 && (
-            <div>
-              <label className="block text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1.5">
-                Or pick from directory
-              </label>
-              <div className="space-y-1 max-h-36 overflow-y-auto border border-slate-100 rounded-xl p-1 bg-slate-50/50">
-                {availableUsers.map((user) => (
+          <div>
+            <label className="block text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1.5">
+              Or pick from directory
+            </label>
+            <div className="space-y-1 max-h-36 overflow-y-auto border border-slate-100 rounded-xl p-1 bg-slate-50/50">
+              {isDirectoryLoading ? (
+                <div className="p-2 text-[11px] text-slate-400">
+                  Loading registered users...
+                </div>
+              ) : availableUsers.length === 0 ? (
+                <div className="p-2 text-[11px] text-slate-400">
+                  No registered users to add yet.
+                </div>
+              ) : (
+                availableUsers.map((user) => (
                   <button
                     key={user.id}
                     type="button"
-                    onClick={() => handleAddMember(user.email)}
+                    onClick={() => void handleAddMember(user.email)}
                     className="w-full text-left p-1.5 rounded-lg hover:bg-white text-xs flex items-center justify-between transition-colors"
                   >
                     <div>
@@ -154,10 +180,10 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose 
                       + Add
                     </span>
                   </button>
-                ))}
-              </div>
+                ))
+              )}
             </div>
-          )}
+          </div>
 
           <div className="pt-2 flex items-center justify-end gap-2">
             <button

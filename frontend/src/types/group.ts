@@ -86,3 +86,11 @@ export interface UpdateGroupResult {
 export interface AddMemberPayload {
   email: string;
 }
+
+export interface AddMemberResult {
+  userId: string;
+  name: string;
+  email: string;
+  role: 'member';
+  joinedAt: string;
+}

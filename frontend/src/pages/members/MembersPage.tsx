@@ -12,6 +12,7 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import { Button } from '../../components/ui/Button';
 import { MemberAccountabilityModal } from '../../components/members/MemberAccountabilityModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
+import { removeGroupMember } from '../../services/group.service';
 
 export const MembersPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -54,8 +55,11 @@ export const MembersPage: React.FC = () => {
     );
   };
 
-  const handleConfirmRemove = () => {
-    if (memberToRemove) {
+  const handleConfirmRemove = async () => {
+    if (!memberToRemove) return;
+
+    try {
+      await removeGroupMember(currentGroup.id, memberToRemove.userId);
       dispatch(removeMember(memberToRemove.userId));
       dispatch(
         addToast({
@@ -65,6 +69,14 @@ export const MembersPage: React.FC = () => {
         })
       );
       setMemberToRemove(null);
+    } catch (err) {
+      dispatch(
+        addToast({
+          type: 'error',
+          title: 'Removal Failed',
+          message: err instanceof Error ? err.message : 'Failed to remove member.',
+        })
+      );
     }
   };
 

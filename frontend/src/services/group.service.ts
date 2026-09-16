@@ -1,6 +1,8 @@
 import apiClient from './axios';
 import type { ApiResponseError, ApiResponseSuccess } from '../types/api';
 import type {
+  AddMemberPayload,
+  AddMemberResult,
   CreateGroupPayload,
   CreateGroupResult,
   GroupDetailsApiResult,
@@ -127,4 +129,36 @@ export async function updateGroupDetails(
   }
 
   return body.data;
+}
+
+export async function addGroupMember(
+  groupId: string,
+  payload: AddMemberPayload,
+): Promise<AddMemberResult> {
+  const response = await apiClient.post<
+    ApiResponseSuccess<AddMemberResult> | ApiResponseError
+  >(`/groups/${groupId}/members`, payload);
+
+  const body = response.data;
+
+  if (body.status === 'error') {
+    throw new Error(body.message);
+  }
+
+  return body.data;
+}
+
+export async function removeGroupMember(
+  groupId: string,
+  userId: string,
+): Promise<void> {
+  const response = await apiClient.delete<
+    ApiResponseSuccess<null> | ApiResponseError
+  >(`/groups/${groupId}/members/${userId}`);
+
+  const body = response.data;
+
+  if (body && 'status' in body && body.status === 'error') {
+    throw new Error(body.message);
+  }
 }

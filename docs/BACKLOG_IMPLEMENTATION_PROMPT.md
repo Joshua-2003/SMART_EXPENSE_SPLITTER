@@ -21,9 +21,9 @@ Rules:
 - After successful completion, update the backlog status in docs/BACKLOG.md for this item to reflect that it is done.
 
 Backlog item:
-- Backlog ID: AUTH-001
-- Title: Signup
-- Module: AUTH
+- Backlog ID: GROUP-005
+- Title: Add and Remove Group Members
+- Module: GROUP
 
 Expected outcome:
 - Complete the implementation for this backlog item.

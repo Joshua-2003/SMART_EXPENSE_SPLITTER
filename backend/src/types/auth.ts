@@ -48,3 +48,23 @@ export interface UpdateProfileResult {
   name: string;
   updatedAt: Date;
 }
+
+export interface ListUsersInput {
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface UserDirectoryItem {
+  userId: string;
+  email: string;
+  name: string;
+  createdAt: Date;
+}
+
+export interface ListUsersResult {
+  users: UserDirectoryItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}

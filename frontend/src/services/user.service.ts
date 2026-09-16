@@ -1,10 +1,33 @@
 import apiClient from './axios';
 import type { ApiResponseError, ApiResponseSuccess } from '../types/api';
-import type { ProfileResult, UpdateProfilePayload, UpdateProfileResult } from '../types/auth';
+import type {
+  ListUsersParams,
+  ListUsersResult,
+  ProfileResult,
+  UpdateProfilePayload,
+  UpdateProfileResult,
+} from '../types/auth';
 
 export async function getProfile(): Promise<ProfileResult> {
   const response = await apiClient.get<ApiResponseSuccess<ProfileResult> | ApiResponseError>(
     '/users/me'
+  );
+
+  const body = response.data;
+
+  if (body.status === 'error') {
+    throw new Error(body.message);
+  }
+
+  return body.data;
+}
+
+export async function listUsers(
+  params: ListUsersParams = {}
+): Promise<ListUsersResult> {
+  const response = await apiClient.get<ApiResponseSuccess<ListUsersResult> | ApiResponseError>(
+    '/users',
+    { params }
   );
 
   const body = response.data;

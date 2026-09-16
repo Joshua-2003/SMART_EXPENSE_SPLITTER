@@ -3,9 +3,11 @@ import { body, param, query, validationResult } from 'express-validator';
 import type { RequestHandler } from 'express';
 
 import {
+  addMember,
   createGroup,
   getGroupDetails,
   listGroups,
+  removeMember,
   updateGroup,
 } from '../controllers/group.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
@@ -92,4 +94,29 @@ groupRouter.patch(
   ],
   validate(),
   updateGroup,
+);
+
+groupRouter.post(
+  '/:groupId/members',
+  authenticate,
+  [
+    param('groupId').isUUID().withMessage('Invalid group id'),
+    body('email')
+      .isEmail()
+      .withMessage('Valid email is required')
+      .normalizeEmail(),
+  ],
+  validate(),
+  addMember,
+);
+
+groupRouter.delete(
+  '/:groupId/members/:userId',
+  authenticate,
+  [
+    param('groupId').isUUID().withMessage('Invalid group id'),
+    param('userId').isUUID().withMessage('Invalid user id'),
+  ],
+  validate(),
+  removeMember,
 );

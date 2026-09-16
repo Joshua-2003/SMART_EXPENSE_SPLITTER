@@ -61,3 +61,15 @@ export interface UpdateGroupResult {
   description: string | null;
   updatedAt: Date;
 }
+
+export interface AddMemberInput {
+  email: string;
+}
+
+export interface AddMemberResult {
+  userId: string;
+  name: string;
+  email: string;
+  role: 'member';
+  joinedAt: Date;
+}
