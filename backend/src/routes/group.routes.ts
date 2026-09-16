@@ -11,6 +11,7 @@ import {
   updateGroup,
 } from '../controllers/group.controller.js';
 import { createExpense, getExpenseDetails, listExpenses } from '../controllers/expense.controller.js';
+import { markPaymentCompleted } from '../controllers/payment.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { HttpError } from '../utils/http-error.js';
 
@@ -191,4 +192,21 @@ groupRouter.get(
   ],
   validate(),
   getExpenseDetails,
+);
+
+groupRouter.patch(
+  '/:groupId/expenses/:expenseId/splits/:splitId/payment',
+  authenticate,
+  [
+    param('groupId').isUUID().withMessage('Invalid group id'),
+    param('expenseId').isUUID().withMessage('Invalid expense id'),
+    param('splitId').isUUID().withMessage('Invalid split id'),
+    body('status')
+      .isString()
+      .withMessage('Status must be a string')
+      .isIn(['completed'])
+      .withMessage('Status must be "completed"'),
+  ],
+  validate(),
+  markPaymentCompleted,
 );

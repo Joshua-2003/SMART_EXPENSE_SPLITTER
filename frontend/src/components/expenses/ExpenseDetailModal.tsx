@@ -6,6 +6,7 @@ import { markSplitCompleted } from '../../store/slices/expensesSlice';
 import { updateMemberBalances } from '../../store/slices/groupsSlice';
 import { addNotification } from '../../store/slices/accountabilitySlice';
 import { addToast } from '../../store/slices/uiSlice';
+import { markSplitAsPaid } from '../../services/payment.service';
 import { StatusBadge } from '../common/StatusBadge';
 
 interface ExpenseDetailModalProps {
@@ -30,32 +31,37 @@ export const ExpenseDetailModal: React.FC<ExpenseDetailModalProps> = ({ expense,
     year: 'numeric',
   });
 
-  const handleMarkPaid = (splitId: string, debtorUserId: string, assignedAmount: number) => {
-    dispatch(
-      markSplitCompleted({
-        expenseId: expense.id,
-        splitId,
-      })
-    );
+  const handleMarkPaid = async (splitId: string, debtorUserId: string, assignedAmount: number) => {
+    try {
+      await markSplitAsPaid(expense.groupId, expense.id, splitId);
 
-    // Update member balance: debtor paid off `assignedAmount`, payer gets back `assignedAmount`
-    const newBalances: Record<string, number> = {};
-    members.forEach((m) => {
-      if (m.userId === debtorUserId) {
-        newBalances[m.userId] = Math.max(0, m.balance - assignedAmount);
-      } else if (m.userId === expense.createdBy) {
-        newBalances[m.userId] = Math.min(0, m.balance + assignedAmount);
-      }
-    });
-    dispatch(updateMemberBalances(newBalances));
+      // Update member balance: debtor paid off `assignedAmount`, payer gets back `assignedAmount`
+      const newBalances: Record<string, number> = {};
+      members.forEach((m) => {
+        if (m.userId === debtorUserId) {
+          newBalances[m.userId] = Math.max(0, m.balance - assignedAmount);
+        } else if (m.userId === expense.createdBy) {
+          newBalances[m.userId] = Math.min(0, m.balance + assignedAmount);
+        }
+      });
+      dispatch(updateMemberBalances(newBalances));
 
-    dispatch(
-      addToast({
-        type: 'success',
-        title: 'Share Settled',
-        message: `Marked share of ${currentGroup.currencySymbol}${assignedAmount.toFixed(2)} as paid.`,
-      })
-    );
+      dispatch(
+        addToast({
+          type: 'success',
+          title: 'Share Settled',
+          message: `Marked share of ${currentGroup.currencySymbol}${assignedAmount.toFixed(2)} as paid.`,
+        })
+      );
+    } catch (error) {
+      dispatch(
+        addToast({
+          type: 'error',
+          title: 'Payment Failed',
+          message: error instanceof Error ? error.message : 'Could not mark the share as paid.',
+        })
+      );
+    }
   };
 
   const handleSendReminder = (userName: string, amt: number) => {
