@@ -10,6 +10,7 @@ import {
   removeMember,
   updateGroup,
 } from '../controllers/group.controller.js';
+import { createExpense } from '../controllers/expense.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { HttpError } from '../utils/http-error.js';
 
@@ -119,4 +120,42 @@ groupRouter.delete(
   ],
   validate(),
   removeMember,
+);
+
+groupRouter.post(
+  '/:groupId/expenses',
+  authenticate,
+  [
+    param('groupId').isUUID().withMessage('Invalid group id'),
+    body('description')
+      .isString()
+      .withMessage('Description must be a string')
+      .trim()
+      .notEmpty()
+      .withMessage('Description is required')
+      .isLength({ max: 255 })
+      .withMessage('Description must be at most 255 characters'),
+    body('amount')
+      .isFloat({ min: 0.01 })
+      .withMessage('Amount must be a positive decimal number'),
+    body('splitType')
+      .isString()
+      .withMessage('splitType must be a string')
+      .isIn(['equal', 'manual'])
+      .withMessage('splitType must be either "equal" or "manual"'),
+    body('memberSplits')
+      .optional()
+      .isArray()
+      .withMessage('memberSplits must be an array'),
+    body('memberSplits.*.userId')
+      .optional()
+      .isUUID()
+      .withMessage('Invalid member user id'),
+    body('memberSplits.*.amount')
+      .optional()
+      .isFloat({ min: 0.01 })
+      .withMessage('Member split amount must be a positive decimal number'),
+  ],
+  validate(),
+  createExpense,
 );

@@ -37,7 +37,7 @@ This project delivers a group expense management system for friends, roommates, 
 | GROUP-003 | GROUP | Phase 2 | P0 | Get Group Details and Members | M | Done |
 | GROUP-004 | GROUP | Phase 2 | P1 | Update Group Details (Admin Only) | S | Done |
 | GROUP-005 | GROUP | Phase 2 | P1 | Add and Remove Group Members | M | Done |
-| EXP-001 | EXPENSE | Phase 2 | P0 | Create Shared Expense | M | Not Started |
+| EXP-001 | EXPENSE | Phase 2 | P0 | Create Shared Expense | M | Done |
 | EXP-002 | EXPENSE | Phase 2 | P0 | List Group Expenses | S | Not Started |
 | EXP-003 | EXPENSE | Phase 2 | P1 | Get Expense Details | S | Not Started |
 | PAY-001 | PAYMENT | Phase 3 | P0 | Mark Payment as Completed | M | Not Started |
@@ -402,6 +402,7 @@ Implement member management flows for the group. This includes adding a user to 
 - Phase: Phase 2
 - Priority: P0
 - Complexity: M
+- Status: Done (2026-09-16)
 
 #### User Story
 > As a group member, I want to record a shared expense so that the group can track and settle shared costs accurately.
@@ -968,3 +969,4 @@ DASH-001
 | 1.6 | 2026-09-09 | GROUP-003 (Get Group Details and Members) completed: protected GET /groups/{groupId} with member-only access control and member roster join, group details + members loaded into store on active workspace change. |
 | 1.7 | 2026-09-09 | GROUP-004 (Update Group Details, Admin Only) completed: protected PATCH /groups/{groupId} with admin-only access control and partial name/description updates, edit modal wired to the live API in GroupsPage. |
 | 1.8 | 2026-09-10 | GROUP-005 (Add and Remove Group Members) completed: protected POST /groups/{groupId}/members and DELETE /groups/{groupId}/members/{userId} with admin-only access control, duplicate prevention, and self-removal guard; AddMemberModal and MembersPage wired to real API. |
+| 1.9 | 2026-09-16 | EXP-001 (Create Shared Expense) completed: protected POST /groups/{groupId}/expenses with member-only access control, express-validator rules, transactional expense + equal-split creation (cents-based with remainder to first member); manual split assignment rejected as out of MVP scope; CreateExpenseModal rewired to the real API and limited to equal split. |

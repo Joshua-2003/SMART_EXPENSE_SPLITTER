@@ -35,6 +35,22 @@ export interface CreateExpensePayload {
   }>;
 }
 
+export interface ExpenseSplitApiItem {
+  splitId: string;
+  userId: string;
+  assignedAmount: number;
+}
+
+export interface CreateExpenseResult {
+  expenseId: string;
+  groupId: string;
+  description: string;
+  amount: number;
+  createdBy: string;
+  createdAt: string;
+  splits: ExpenseSplitApiItem[];
+}
+
 export interface SimplifiedDebt {
   fromUserId: string;
   fromUserName: string;
