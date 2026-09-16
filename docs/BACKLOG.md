@@ -41,7 +41,7 @@ This project delivers a group expense management system for friends, roommates, 
 | EXP-002 | EXPENSE | Phase 2 | P0 | List Group Expenses | S | Done |
 | EXP-003 | EXPENSE | Phase 2 | P1 | Get Expense Details | S | Done |
 | PAY-001 | PAYMENT | Phase 3 | P0 | Mark Payment as Completed | M | Done |
-| PAY-002 | PAYMENT | Phase 3 | P0 | Get Personal Balance in Group | S | Not Started |
+| PAY-002 | PAYMENT | Phase 3 | P0 | Get Personal Balance in Group | S | Done |
 | PAY-003 | PAYMENT | Phase 3 | P1 | Get Group Settlement Status | M | Not Started |
 | ACC-001 | ACCOUNTABILITY | Phase 3 | P1 | Get Member Payment History | M | Not Started |
 | ACC-002 | ACCOUNTABILITY | Phase 3 | P1 | Get Overdue Balances | M | Not Started |
@@ -582,6 +582,7 @@ Implement the payment settlement flow that updates a split payment status to com
 - Phase: Phase 3
 - Priority: P0
 - Complexity: S
+- Status: Done (2026-09-17)
 
 #### User Story
 > As a group member, I want to see my current balance so that I know what I owe or am owed in the group.

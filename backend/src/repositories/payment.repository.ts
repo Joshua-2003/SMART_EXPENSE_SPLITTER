@@ -1,7 +1,7 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { db } from '../db/db.js';
 import { expenseSplits, expenses, paymentHistory, payments } from '../models/index.js';
-import type { MarkPaymentCompletedResult } from '../types/payment.js';
+import type { GetPersonalBalanceResult, MarkPaymentCompletedResult } from '../types/payment.js';
 
 export interface SplitForPayment {
   splitId: string;
@@ -42,6 +42,61 @@ export async function findSplitForPayment(
     expenseId: split.expenseId,
     userId: split.userId,
     assignedAmount: Number(split.assignedAmount),
+  };
+}
+
+export async function getPersonalBalanceForMember(
+  groupId: string,
+  userId: string,
+): Promise<GetPersonalBalanceResult> {
+  const [row] = await db
+    .select({
+      totalOwes: sql<number>`COALESCE(
+        SUM(
+          CASE 
+            WHEN ${expenseSplits.userId} = ${userId}
+              AND ${expenses.createdBy} <> ${userId}
+              AND (${payments.status} IS NULL OR ${payments.status} = 'pending')
+            THEN CAST(${expenseSplits.assignedAmount} AS NUMERIC)
+            ELSE 0
+          END
+        ), 0
+      )::float`,
+      totalReceives: sql<number>`COALESCE(
+        SUM(
+          CASE 
+            WHEN ${expenseSplits.userId} <> ${userId}
+              AND ${expenses.createdBy} = ${userId}
+              AND (${payments.status} IS NULL OR ${payments.status} = 'pending')
+            THEN CAST(${expenseSplits.assignedAmount} AS NUMERIC)
+            ELSE 0
+          END
+        ), 0
+      )::float`,
+      lastUpdated: sql<Date | null>`MAX(COALESCE(${payments.updatedAt}, ${expenses.createdAt}))`,
+    })
+    .from(expenseSplits)
+    .innerJoin(expenses, eq(expenses.id, expenseSplits.expenseId))
+    .leftJoin(
+      payments,
+      and(
+        eq(payments.expenseId, expenseSplits.expenseId),
+        eq(payments.userId, expenseSplits.userId),
+      ),
+    )
+    .where(eq(expenses.groupId, groupId));
+
+  const totalOwes = Number(row?.totalOwes ?? 0);
+  const totalReceives = Number(row?.totalReceives ?? 0);
+  const lastUpdated = row?.lastUpdated ?? new Date();
+
+  return {
+    userId,
+    groupId,
+    totalOwes,
+    totalReceives,
+    netBalance: totalOwes - totalReceives,
+    lastUpdated,
   };
 }
 

@@ -1,13 +1,32 @@
 import { findById, findMembership } from '../repositories/group.repository.js';
 import {
   findSplitForPayment,
+  getPersonalBalanceForMember,
   markPaymentCompleted,
 } from '../repositories/payment.repository.js';
 import { HttpError } from '../utils/http-error.js';
 import type {
+  GetPersonalBalanceResult,
   MarkPaymentCompletedInput,
   MarkPaymentCompletedResult,
 } from '../types/payment.js';
+
+export async function getPersonalBalance(
+  groupId: string,
+  actorUserId: string,
+): Promise<GetPersonalBalanceResult> {
+  const group = await findById(groupId);
+  if (!group) {
+    throw new HttpError(404, 'GROUP_NOT_FOUND', 'Group not found.');
+  }
+
+  const membership = await findMembership(groupId, actorUserId);
+  if (!membership) {
+    throw new HttpError(403, 'FORBIDDEN', 'User is not a member of this group.');
+  }
+
+  return getPersonalBalanceForMember(groupId, actorUserId);
+}
 
 export async function markSplitAsPaid(
   groupId: string,

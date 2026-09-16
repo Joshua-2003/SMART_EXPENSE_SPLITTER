@@ -12,3 +12,12 @@ export interface MarkPaymentCompletedResult {
   status: Extract<PaymentStatus, 'completed'>;
   paidAt: string;
 }
+
+export interface GetPersonalBalanceResult {
+  userId: string;
+  groupId: string;
+  totalOwes: number;
+  totalReceives: number;
+  netBalance: number;
+  lastUpdated: Date;
+}
