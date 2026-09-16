@@ -1,5 +1,6 @@
 export type SplitType = 'equal' | 'manual';
 export type ExpenseSortBy = 'date' | 'amount';
+export type PaymentStatus = 'pending' | 'completed';
 
 export interface ExpenseMemberSplit {
   userId: string;
@@ -57,4 +58,23 @@ export interface ListExpensesResult {
   total: number;
   limit: number;
   offset: number;
+}
+
+export interface ExpenseSplitDetail {
+  splitId: string;
+  userId: string;
+  userName: string;
+  assignedAmount: string;
+  paymentStatus: PaymentStatus;
+}
+
+export interface ExpenseDetailResult {
+  expenseId: string;
+  groupId: string;
+  description: string;
+  amount: string;
+  createdBy: string;
+  createdByName: string;
+  createdAt: Date;
+  splits: ExpenseSplitDetail[];
 }

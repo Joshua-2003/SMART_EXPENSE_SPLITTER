@@ -1,8 +1,9 @@
 import { findById, findMembership } from '../repositories/group.repository.js';
-import { createWithSplits, listForGroup } from '../repositories/expense.repository.js';
+import { createWithSplits, findDetailById, listForGroup } from '../repositories/expense.repository.js';
 import type {
   CreateExpenseInput,
   CreateExpenseResult,
+  ExpenseDetailResult,
   ListExpensesInput,
   ListExpensesResult,
 } from '../types/expense.js';
@@ -98,4 +99,27 @@ export async function listGroupExpenses(
     limit,
     offset,
   };
+}
+
+export async function getExpenseDetails(
+  actorUserId: string,
+  groupId: string,
+  expenseId: string,
+): Promise<ExpenseDetailResult> {
+  const group = await findById(groupId);
+  if (!group) {
+    throw new HttpError(404, 'NOT_FOUND', 'Group not found');
+  }
+
+  const membership = await findMembership(groupId, actorUserId);
+  if (!membership) {
+    throw new HttpError(403, 'FORBIDDEN', 'User is not a member of this group');
+  }
+
+  const expense = await findDetailById(groupId, expenseId);
+  if (!expense) {
+    throw new HttpError(404, 'NOT_FOUND', 'Group or expense not found');
+  }
+
+  return expense;
 }

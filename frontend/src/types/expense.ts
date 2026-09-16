@@ -25,6 +25,25 @@ export interface ExpenseApiListItem {
   splits: ExpenseSplitApiListItem[];
 }
 
+export interface ExpenseSplitApiDetailItem {
+  splitId: string;
+  userId: string;
+  userName: string;
+  assignedAmount: number;
+  paymentStatus: PaymentStatus;
+}
+
+export interface ExpenseApiDetailItem {
+  expenseId: string;
+  groupId: string;
+  description: string;
+  amount: number;
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
+  splits: ExpenseSplitApiDetailItem[];
+}
+
 export interface ListExpensesResult {
   expenses: Expense[];
   total: number;

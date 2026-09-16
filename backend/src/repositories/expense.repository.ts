@@ -1,7 +1,13 @@
-import { eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '../db/db.js';
-import { expenseSplits, expenses, users } from '../models/index.js';
-import type { CreateExpenseResult, ExpenseListItem, ExpenseSortBy } from '../types/expense.js';
+import { expenseSplits, expenses, payments, users } from '../models/index.js';
+import type {
+  CreateExpenseResult,
+  ExpenseDetailResult,
+  ExpenseListItem,
+  ExpenseSortBy,
+  PaymentStatus,
+} from '../types/expense.js';
 
 export async function createWithSplits(
   groupId: string,
@@ -127,5 +133,65 @@ export async function listForGroup(
   return {
     items,
     total: totalRow?.total ?? 0,
+  };
+}
+
+export async function findDetailById(
+  groupId: string,
+  expenseId: string,
+): Promise<ExpenseDetailResult | undefined> {
+  const [expense] = await db
+    .select({
+      expenseId: expenses.id,
+      groupId: expenses.groupId,
+      description: expenses.description,
+      amount: expenses.amount,
+      createdBy: expenses.createdBy,
+      createdByName: users.name,
+      createdAt: expenses.createdAt,
+    })
+    .from(expenses)
+    .innerJoin(users, eq(users.id, expenses.createdBy))
+    .where(and(eq(expenses.id, expenseId), eq(expenses.groupId, groupId)))
+    .limit(1);
+
+  if (!expense) {
+    return undefined;
+  }
+
+  const splitRows = await db
+    .select({
+      splitId: expenseSplits.id,
+      userId: expenseSplits.userId,
+      userName: users.name,
+      assignedAmount: expenseSplits.assignedAmount,
+      paymentStatus: payments.status,
+    })
+    .from(expenseSplits)
+    .innerJoin(users, eq(users.id, expenseSplits.userId))
+    .leftJoin(
+      payments,
+      and(
+        eq(payments.expenseId, expenseSplits.expenseId),
+        eq(payments.userId, expenseSplits.userId),
+      ),
+    )
+    .where(eq(expenseSplits.expenseId, expenseId));
+
+  return {
+    expenseId: expense.expenseId,
+    groupId: expense.groupId,
+    description: expense.description,
+    amount: expense.amount,
+    createdBy: expense.createdBy,
+    createdByName: expense.createdByName,
+    createdAt: expense.createdAt,
+    splits: splitRows.map((split) => ({
+      splitId: split.splitId,
+      userId: split.userId,
+      userName: split.userName,
+      assignedAmount: split.assignedAmount,
+      paymentStatus: (split.paymentStatus ?? 'pending') as PaymentStatus,
+    })),
   };
 }

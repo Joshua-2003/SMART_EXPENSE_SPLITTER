@@ -4,6 +4,7 @@ import type {
   CreateExpensePayload,
   CreateExpenseResult,
   Expense,
+  ExpenseApiDetailItem,
   ExpenseApiListItem,
   ExpenseSortBy,
   ListExpensesResult,
@@ -74,5 +75,40 @@ export async function listGroupExpenses(
     total: body.data.total,
     limit: body.data.limit,
     offset: body.data.offset,
+  };
+}
+
+export async function getExpenseDetails(
+  groupId: string,
+  expenseId: string,
+): Promise<Expense> {
+  const response = await apiClient.get<
+    ApiResponseSuccess<ExpenseApiDetailItem> | ApiResponseError
+  >(`/groups/${groupId}/expenses/${expenseId}`);
+
+  const body = response.data;
+
+  if (body.status === 'error') {
+    throw new Error(body.message);
+  }
+
+  const item = body.data;
+
+  return {
+    id: item.expenseId,
+    groupId: item.groupId,
+    description: item.description,
+    amount: item.amount,
+    createdBy: item.createdBy,
+    createdByName: item.createdByName,
+    createdAt: item.createdAt,
+    splits: item.splits.map((split) => ({
+      splitId: split.splitId,
+      userId: split.userId,
+      userName: split.userName,
+      assignedAmount: split.assignedAmount,
+      paymentStatus: split.paymentStatus,
+      status: split.paymentStatus,
+    })),
   };
 }

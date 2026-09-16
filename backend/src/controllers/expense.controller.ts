@@ -3,6 +3,48 @@ import type { NextFunction, Request, Response } from 'express';
 import * as expenseService from '../services/expense.service.js';
 import type { ExpenseSortBy } from '../types/expense.js';
 
+export async function getExpenseDetails(
+  req: Request<{ groupId: string; expenseId: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const actorId = req.user?.userId;
+    if (!actorId) {
+      throw new Error('Authenticated request is missing a user');
+    }
+
+    const expense = await expenseService.getExpenseDetails(
+      actorId,
+      req.params.groupId,
+      req.params.expenseId,
+    );
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        expenseId: expense.expenseId,
+        groupId: expense.groupId,
+        description: expense.description,
+        amount: Number(expense.amount),
+        createdBy: expense.createdBy,
+        createdByName: expense.createdByName,
+        createdAt: expense.createdAt.toISOString(),
+        splits: expense.splits.map((split) => ({
+          splitId: split.splitId,
+          userId: split.userId,
+          userName: split.userName,
+          assignedAmount: Number(split.assignedAmount),
+          paymentStatus: split.paymentStatus,
+        })),
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function listExpenses(
   req: Request<{ groupId: string }>,
   res: Response,

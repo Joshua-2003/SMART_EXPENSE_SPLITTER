@@ -39,7 +39,7 @@ This project delivers a group expense management system for friends, roommates, 
 | GROUP-005 | GROUP | Phase 2 | P1 | Add and Remove Group Members | M | Done |
 | EXP-001 | EXPENSE | Phase 2 | P0 | Create Shared Expense | M | Done |
 | EXP-002 | EXPENSE | Phase 2 | P0 | List Group Expenses | S | Done |
-| EXP-003 | EXPENSE | Phase 2 | P1 | Get Expense Details | S | Not Started |
+| EXP-003 | EXPENSE | Phase 2 | P1 | Get Expense Details | S | Done |
 | PAY-001 | PAYMENT | Phase 3 | P0 | Mark Payment as Completed | M | Not Started |
 | PAY-002 | PAYMENT | Phase 3 | P0 | Get Personal Balance in Group | S | Not Started |
 | PAY-003 | PAYMENT | Phase 3 | P1 | Get Group Settlement Status | M | Not Started |
@@ -492,6 +492,7 @@ Implement retrieval of all expenses for a group, with filtering and sorting capa
 - Phase: Phase 2
 - Priority: P1
 - Complexity: S
+- Status: Done (2026-09-16)
 
 #### User Story
 > As a group member, I want to view a specific expense detail so that I can confirm what was paid and how the split was assigned.
@@ -972,3 +973,4 @@ DASH-001
 | 1.8 | 2026-09-10 | GROUP-005 (Add and Remove Group Members) completed: protected POST /groups/{groupId}/members and DELETE /groups/{groupId}/members/{userId} with admin-only access control, duplicate prevention, and self-removal guard; AddMemberModal and MembersPage wired to real API. |
 | 1.9 | 2026-09-16 | EXP-001 (Create Shared Expense) completed: protected POST /groups/{groupId}/expenses with member-only access control, express-validator rules, transactional expense + equal-split creation (cents-based with remainder to first member); manual split assignment rejected as out of MVP scope; CreateExpenseModal rewired to the real API and limited to equal split. |
 | 1.10 | 2026-09-16 | EXP-002 (List Group Expenses) completed: protected GET /groups/{groupId}/expenses with member-only access control, express-validator query rules (limit/offset/sortBy), paginated listing with creator names and per-expense split breakdown sorted by date or amount descending; ExpensesPage reloads real expense data on group change. |
+| 1.11 | 2026-09-16 | EXP-003 (Get Expense Details) completed: protected GET /groups/{groupId}/expenses/{expenseId} with member-only access control, group/expense mismatch 404s, and per-split paymentDetail joined from the payments table (coalesced to pending); ExpenseDetailModal now fetches live split details on row click. |

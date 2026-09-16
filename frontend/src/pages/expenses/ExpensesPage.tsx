@@ -16,7 +16,7 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import { LoadingState } from '../../components/common/LoadingState';
 import { Button } from '../../components/ui/Button';
 import { ExpenseDetailModal } from '../../components/expenses/ExpenseDetailModal';
-import { listGroupExpenses } from '../../services/expense.service';
+import { getExpenseDetails, listGroupExpenses } from '../../services/expense.service';
 
 export const ExpensesPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -39,6 +39,16 @@ export const ExpensesPage: React.FC = () => {
 
     void loadExpenses();
   }, [currentGroup.id, dispatch]);
+
+  const handleRowClick = async (exp: Expense) => {
+    dispatch(setSelectedExpense(exp));
+    try {
+      const detail = await getExpenseDetails(currentGroup.id, exp.id);
+      dispatch(setSelectedExpense(detail));
+    } catch (err) {
+      dispatch(setError(err instanceof Error ? err.message : 'Failed to load expense details.'));
+    }
+  };
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -182,7 +192,7 @@ export const ExpensesPage: React.FC = () => {
           columns={columns}
           data={filteredExpenses}
           keyExtractor={(exp) => exp.id}
-          onRowClick={(exp) => dispatch(setSelectedExpense(exp))}
+          onRowClick={handleRowClick}
           emptyTitle="No expenses found"
           emptyDescription="Try adjusting your search criteria or record a new expense."
         />
