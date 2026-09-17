@@ -13,6 +13,7 @@ import {
 import { createExpense, getExpenseDetails, listExpenses } from '../controllers/expense.controller.js';
 import { getGroupBalance, getGroupSettlement, markPaymentCompleted } from '../controllers/payment.controller.js';
 import { getMemberHistory, getMemberReliabilityHandler, getOverdueBalancesHandler } from '../controllers/accountability.controller.js';
+import { getDashboard } from '../controllers/dashboard.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { HttpError } from '../utils/http-error.js';
 
@@ -242,6 +243,14 @@ groupRouter.get(
   ],
   validate(),
   getOverdueBalancesHandler,
+);
+
+groupRouter.get(
+  '/:groupId/dashboard',
+  authenticate,
+  [param('groupId').isUUID().withMessage('Invalid group id')],
+  validate(),
+  getDashboard,
 );
 
 groupRouter.get(

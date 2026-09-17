@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Receipt,
@@ -12,12 +12,23 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { setCreateExpenseOpen, setAddMemberOpen } from '../../store/slices/uiSlice';
+import { addToast, setCreateExpenseOpen, setAddMemberOpen } from '../../store/slices/uiSlice';
+import { getGroupDashboard } from '../../services/dashboard.service';
+import { setDashboard } from '../../store/slices/dashboardSlice';
 import { MetricCard } from '../../components/common/MetricCard';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Button } from '../../components/ui/Button';
 import { ROUTES } from '../../constants/routes';
+
+interface RecentExpenseItem {
+  id: string;
+  description: string;
+  createdByName: string;
+  amount: number;
+  createdAt: string;
+  splits?: Array<{ paymentStatus?: string }>;
+}
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -26,11 +37,40 @@ export const DashboardPage: React.FC = () => {
   const { currentGroup, members, settlement } = useAppSelector((state) => state.groups);
   const { expenses } = useAppSelector((state) => state.expenses);
   const { currentUser } = useAppSelector((state) => state.auth);
-  const { overdueThresholdDays } = useAppSelector((state) => state.accountability);
+  const { reliabilityScores, overdueThresholdDays } = useAppSelector(
+    (state) => state.accountability
+  );
+  const { data: dashboardData } = useAppSelector((state) => state.dashboard);
 
-  // Derived metrics — prefer backend settlement data, fall back to local computation
+  useEffect(() => {
+    let cancelled = false;
+
+    getGroupDashboard(currentGroup.id)
+      .then((data) => {
+        if (cancelled) return;
+        dispatch(setDashboard(data));
+      })
+      .catch((error: Error) => {
+        if (cancelled) return;
+        dispatch(
+          addToast({
+            type: 'error',
+            title: 'Dashboard Load Failed',
+            message: error.message || 'Unable to load dashboard data.',
+          })
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentGroup.id, dispatch]);
+
+  // Derived metrics — prefer backend dashboard data, fall back to local computation
   const totalExpenses =
-    settlement?.totalGroupExpenses ?? expenses.reduce((sum, e) => sum + e.amount, 0);
+    dashboardData?.totalExpenses ??
+    settlement?.totalGroupExpenses ??
+    expenses.reduce((sum, e) => sum + e.amount, 0);
 
   const pendingSplits = expenses.flatMap((e) =>
     e.splits
@@ -43,13 +83,33 @@ export const DashboardPage: React.FC = () => {
       }))
   );
 
-  const totalPendingAmount =
-    settlement?.members.reduce((sum, m) => sum + m.pendingPayments, 0) ??
-    pendingSplits.reduce((sum, s) => sum + s.assignedAmount, 0);
+  const totalPendingAmount = dashboardData
+    ? dashboardData.memberBalances.reduce((sum, m) => sum + m.totalOwes, 0)
+    : settlement?.members.reduce((sum, m) => sum + m.pendingPayments, 0) ??
+      pendingSplits.reduce((sum, s) => sum + s.assignedAmount, 0);
+
+  const pendingSplitCount = dashboardData
+    ? dashboardData.memberBalances.reduce((sum, m) => sum + m.pendingPayments, 0)
+    : pendingSplits.length;
+
+  const balanceRows = dashboardData?.memberBalances?.length
+    ? dashboardData.memberBalances.map((m) => ({
+        userId: m.userId,
+        name: m.name,
+        role: m.role,
+        netBalance: m.totalOwes - m.totalReceives,
+        reliabilityIndicator: m.reliabilityIndicator,
+      }))
+    : members.map((m) => ({
+        userId: m.userId,
+        name: m.name,
+        role: m.role,
+        netBalance: m.balance,
+        reliabilityIndicator: reliabilityScores[m.userId]?.indicator ?? 'Reliable',
+      }));
 
   // Current user balance in group
-  const userMember = members.find((m) => m.userId === currentUser.id);
-  const userBalance = userMember ? userMember.balance : 0;
+  const userBalance = balanceRows.find((m) => m.userId === currentUser.id)?.netBalance ?? 0;
 
   // Overdue calculations (> overdueThresholdDays)
   const now = new Date().getTime();
@@ -58,8 +118,25 @@ export const DashboardPage: React.FC = () => {
     return diffDays >= overdueThresholdDays;
   });
 
-  const overdueTotalAmount = overdueSplits.reduce((sum, s) => sum + s.assignedAmount, 0);
-  const recentExpenses = expenses.slice(0, 5);
+  const overdueCount = dashboardData
+    ? dashboardData.overdueAlerts.length
+    : overdueSplits.length;
+
+  const overdueTotalAmount = dashboardData
+    ? dashboardData.overdueAlerts.reduce((sum, a) => sum + a.totalOverdueAmount, 0)
+    : overdueSplits.reduce((sum, s) => sum + s.assignedAmount, 0);
+
+  const recentExpenseItems: RecentExpenseItem[] = dashboardData?.recentExpenses?.length
+    ? dashboardData.recentExpenses.map((e) => ({
+        id: e.expenseId,
+        description: e.description,
+        createdByName: e.createdBy,
+        amount: e.amount,
+        createdAt: e.createdAt,
+      }))
+    : expenses.slice(0, 5);
+
+  const expenseTotalCount = dashboardData?.expenseCount ?? expenses.length;
 
   return (
     <div className="space-y-6">
@@ -72,7 +149,7 @@ export const DashboardPage: React.FC = () => {
             </span>
             <span className="text-xs text-slate-400">•</span>
             <span className="text-xs text-slate-300">
-              Admin: {currentGroup.adminId === currentUser.id ? 'You' : 'Group Admin'}
+              Admin: {currentGroup.adminId === currentUser.id ? 'You' : (dashboardData?.groupAdmin ?? 'Group Admin')}
             </span>
           </div>
           <h2 className="text-xl font-bold tracking-tight text-white">
@@ -104,7 +181,7 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* Overdue Warning Alert */}
-      {overdueSplits.length > 0 && (
+      {overdueCount > 0 && (
         <div className="p-4 rounded-xl border border-rose-200 bg-rose-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-lg bg-rose-100 text-rose-700 shrink-0">
@@ -112,7 +189,7 @@ export const DashboardPage: React.FC = () => {
             </div>
             <div>
               <div className="text-xs font-semibold text-rose-900 flex items-center gap-2">
-                <span>Accountability Warning: {overdueSplits.length} Overdue Payment Split(s)</span>
+                <span>Accountability Warning: {overdueCount} Overdue Payment Split(s)</span>
                 <span className="font-mono text-rose-700">
                   ({currentGroup.currencySymbol}
                   {overdueTotalAmount.toFixed(2)})
@@ -189,7 +266,7 @@ export const DashboardPage: React.FC = () => {
         <MetricCard
           label="Total Group Spending"
           value={`${currentGroup.currencySymbol}${totalExpenses.toFixed(2)}`}
-          subValue={`${expenses.length} recorded expenses`}
+          subValue={`${expenseTotalCount} recorded expenses`}
           icon={Receipt}
           onClick={() => navigate(ROUTES.EXPENSES)}
         />
@@ -198,17 +275,17 @@ export const DashboardPage: React.FC = () => {
           label="Unsettled Shares"
           value={`${currentGroup.currencySymbol}${totalPendingAmount.toFixed(2)}`}
           variant={totalPendingAmount > 0 ? 'warning' : 'default'}
-          subValue={`${pendingSplits.length} pending split(s)`}
+          subValue={`${pendingSplitCount} pending split(s)`}
           icon={Clock}
           onClick={() => navigate(ROUTES.SETTLEMENT)}
         />
 
         <MetricCard
           label="Group Members"
-          value={members.length}
+          value={dashboardData?.memberCount ?? members.length}
           subValue={
-            overdueSplits.length > 0
-              ? `${overdueSplits.length} split(s) overdue`
+            overdueCount > 0
+              ? `${overdueCount} split(s) overdue`
               : '100% on schedule'
           }
           icon={Users}
@@ -230,16 +307,16 @@ export const DashboardPage: React.FC = () => {
               onClick={() => navigate(ROUTES.EXPENSES)}
               className="text-xs text-emerald-600 hover:text-emerald-700 font-medium inline-flex items-center gap-0.5"
             >
-              <span>View all ({expenses.length})</span>
+              <span>View all ({expenseTotalCount})</span>
               <ArrowRight className="w-3 h-3" />
             </button>
           </div>
 
           <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-white">
-            {recentExpenses.map((exp) => {
-              const total = exp.splits.length;
-              const paid = exp.splits.filter((s) => s.paymentStatus === 'completed').length;
-              const isSettled = paid === total;
+            {recentExpenseItems.map((exp) => {
+              const total = exp.splits?.length ?? 0;
+              const paid = exp.splits?.filter((s) => s.paymentStatus === 'completed').length ?? 0;
+              const isSettled = total > 0 && paid === total;
 
               return (
                 <div
@@ -269,7 +346,9 @@ export const DashboardPage: React.FC = () => {
                       {exp.amount.toFixed(2)}
                     </div>
                     <div className="mt-0.5">
-                      <StatusBadge status={isSettled ? 'completed' : 'pending'} size="sm" />
+                      {exp.splits && exp.splits.length > 0 && (
+                        <StatusBadge status={isSettled ? 'completed' : 'pending'} size="sm" />
+                      )}
                     </div>
                   </div>
                 </div>
@@ -296,7 +375,7 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-white">
-            {members.map((m) => (
+            {balanceRows.map((m) => (
               <div
                 key={m.userId}
                 onClick={() => navigate(ROUTES.MEMBERS)}
@@ -307,21 +386,24 @@ export const DashboardPage: React.FC = () => {
                     {m.name.charAt(0)}
                   </div>
                   <div className="min-w-0">
-                    <div className="font-medium text-slate-900 truncate">{m.name}</div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="font-medium text-slate-900 truncate">{m.name}</div>
+                      <StatusBadge reliability={m.reliabilityIndicator} size="sm" />
+                    </div>
                     <div className="text-[10px] text-slate-400 capitalize">{m.role}</div>
                   </div>
                 </div>
 
                 <div className="text-right shrink-0">
-                  {m.balance > 0.01 ? (
+                  {m.netBalance > 0.01 ? (
                     <span className="font-mono font-semibold text-rose-600 text-xs">
                       +{currentGroup.currencySymbol}
-                      {m.balance.toFixed(2)}
+                      {m.netBalance.toFixed(2)}
                     </span>
-                  ) : m.balance < -0.01 ? (
+                  ) : m.netBalance < -0.01 ? (
                     <span className="font-mono font-semibold text-emerald-600 text-xs">
                       -{currentGroup.currencySymbol}
-                      {Math.abs(m.balance).toFixed(2)}
+                      {Math.abs(m.netBalance).toFixed(2)}
                     </span>
                   ) : (
                     <span className="font-mono text-slate-400 text-xs">₱0.00</span>

@@ -3,6 +3,7 @@ import authReducer from './slices/authSlice';
 import groupsReducer from './slices/groupsSlice';
 import expensesReducer from './slices/expensesSlice';
 import accountabilityReducer from './slices/accountabilitySlice';
+import dashboardReducer from './slices/dashboardSlice';
 import uiReducer from './slices/uiSlice';
 
 export const store = configureStore({
@@ -11,6 +12,7 @@ export const store = configureStore({
     groups: groupsReducer,
     expenses: expensesReducer,
     accountability: accountabilityReducer,
+    dashboard: dashboardReducer,
     ui: uiReducer,
   },
   devTools: process.env.NODE_ENV !== 'production',

@@ -124,6 +124,61 @@ export async function getMemberReliabilityMetrics(
   };
 }
 
+export async function getReliabilityMetricsForGroup(
+  groupId: string,
+): Promise<Array<{ userId: string; metrics: ReliabilityMetrics }>> {
+  const rows = await db
+    .select({
+      userId: expenseSplits.userId,
+      totalPayments: sql<number>`COUNT(*)::int`,
+      completedOnTime: sql<number>`COUNT(
+        CASE
+          WHEN ${payments.status} = 'completed'
+            AND (${payments.paidAt} - ${expenses.createdAt}) <= INTERVAL '7 days'
+          THEN 1
+        END
+      )::int`,
+      completedLate: sql<number>`COUNT(
+        CASE
+          WHEN ${payments.status} = 'completed'
+            AND (${payments.paidAt} - ${expenses.createdAt}) > INTERVAL '7 days'
+          THEN 1
+        END
+      )::int`,
+      stillPending: sql<number>`COUNT(
+        CASE
+          WHEN ${payments.status} IS NULL OR ${payments.status} <> 'completed'
+          THEN 1
+        END
+      )::int`,
+    })
+    .from(expenseSplits)
+    .innerJoin(expenses, eq(expenses.id, expenseSplits.expenseId))
+    .leftJoin(
+      payments,
+      and(eq(payments.expenseId, expenseSplits.expenseId), eq(payments.userId, expenseSplits.userId)),
+    )
+    .where(eq(expenses.groupId, groupId))
+    .groupBy(expenseSplits.userId);
+
+  return rows.map((row) => {
+    const totalPayments = Number(row.totalPayments ?? 0);
+    const completedOnTime = Number(row.completedOnTime ?? 0);
+
+    return {
+      userId: row.userId,
+      metrics: {
+        totalPayments,
+        completedOnTime,
+        completedLate: Number(row.completedLate ?? 0),
+        stillPending: Number(row.stillPending ?? 0),
+        completionRate:
+          totalPayments === 0 ? 0 : Math.round((completedOnTime / totalPayments) * 100),
+      },
+    };
+  });
+}
+
 export async function getOverdueBalancesForGroup(
   groupId: string,
   overdueAfterDays: number,
