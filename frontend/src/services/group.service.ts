@@ -79,6 +79,15 @@ export interface GroupDetailsResult {
   members: GroupMember[];
 }
 
+export interface PersonalBalanceResult {
+  userId: string;
+  groupId: string;
+  totalOwes: number;
+  totalReceives: number;
+  netBalance: number;
+  lastUpdated: string;
+}
+
 export async function getGroupDetails(groupId: string): Promise<GroupDetailsResult> {
   const response = await apiClient.get<ApiResponseSuccess<GroupDetailsApiResult> | ApiResponseError>(
     `/groups/${groupId}`,
@@ -112,6 +121,20 @@ export async function getGroupDetails(groupId: string): Promise<GroupDetailsResu
       joinedAt: m.joinedAt,
     })),
   };
+}
+
+export async function getGroupBalance(groupId: string): Promise<PersonalBalanceResult> {
+  const response = await apiClient.get<ApiResponseSuccess<PersonalBalanceResult> | ApiResponseError>(
+    `/groups/${groupId}/balance`,
+  );
+
+  const body = response.data;
+
+  if (body.status === 'error') {
+    throw new Error(body.message);
+  }
+
+  return body.data;
 }
 
 export async function updateGroupDetails(

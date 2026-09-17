@@ -23,13 +23,14 @@ export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
-  const { currentGroup, members } = useAppSelector((state) => state.groups);
+  const { currentGroup, members, settlement } = useAppSelector((state) => state.groups);
   const { expenses } = useAppSelector((state) => state.expenses);
   const { currentUser } = useAppSelector((state) => state.auth);
   const { overdueThresholdDays } = useAppSelector((state) => state.accountability);
 
-  // Derived metrics
-  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+  // Derived metrics — prefer backend settlement data, fall back to local computation
+  const totalExpenses =
+    settlement?.totalGroupExpenses ?? expenses.reduce((sum, e) => sum + e.amount, 0);
 
   const pendingSplits = expenses.flatMap((e) =>
     e.splits
@@ -42,7 +43,9 @@ export const DashboardPage: React.FC = () => {
       }))
   );
 
-  const totalPendingAmount = pendingSplits.reduce((sum, s) => sum + s.assignedAmount, 0);
+  const totalPendingAmount =
+    settlement?.members.reduce((sum, m) => sum + m.pendingPayments, 0) ??
+    pendingSplits.reduce((sum, s) => sum + s.assignedAmount, 0);
 
   // Current user balance in group
   const userMember = members.find((m) => m.userId === currentUser.id);

@@ -21,3 +21,18 @@ export interface GetPersonalBalanceResult {
   netBalance: number;
   lastUpdated: Date;
 }
+
+export interface GroupSettlementMember {
+  userId: string;
+  name: string;
+  totalOwes: number;
+  totalReceives: number;
+  pendingPayments: number;
+  completedPayments: number;
+}
+
+export interface GetGroupSettlementResult {
+  groupId: string;
+  totalGroupExpenses: number;
+  members: GroupSettlementMember[];
+}

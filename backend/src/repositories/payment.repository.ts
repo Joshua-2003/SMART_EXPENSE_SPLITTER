@@ -1,7 +1,11 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '../db/db.js';
-import { expenseSplits, expenses, paymentHistory, payments } from '../models/index.js';
-import type { GetPersonalBalanceResult, MarkPaymentCompletedResult } from '../types/payment.js';
+import { expenseSplits, expenses, groupMembers, paymentHistory, payments, users } from '../models/index.js';
+import type {
+  GetGroupSettlementResult,
+  GetPersonalBalanceResult,
+  MarkPaymentCompletedResult,
+} from '../types/payment.js';
 
 export interface SplitForPayment {
   splitId: string;
@@ -97,6 +101,80 @@ export async function getPersonalBalanceForMember(
     totalReceives,
     netBalance: totalOwes - totalReceives,
     lastUpdated,
+  };
+}
+
+export async function getGroupSettlementStatus(
+  groupId: string,
+): Promise<GetGroupSettlementResult> {
+  const [totalRow] = await db
+    .select({ totalGroupExpenses: sql<number>`COALESCE(SUM(CAST(${expenses.amount} AS NUMERIC)), 0)::float` })
+    .from(expenses)
+    .where(eq(expenses.groupId, groupId));
+
+  const members = await db
+    .select({
+      userId: users.id,
+      name: users.name,
+      totalOwes: sql<number>`COALESCE(
+        SUM(
+          CASE
+            WHEN ${expenseSplits.userId} = ${users.id}
+              AND ${expenses.createdBy} <> ${users.id}
+              AND (${payments.status} IS NULL OR ${payments.status} = 'pending')
+            THEN CAST(${expenseSplits.assignedAmount} AS NUMERIC)
+            ELSE 0
+          END
+        ), 0
+      )::float`,
+      totalReceives: sql<number>`COALESCE(
+        SUM(
+          CASE
+            WHEN ${expenseSplits.userId} <> ${users.id}
+              AND ${expenses.createdBy} = ${users.id}
+              AND (${payments.status} IS NULL OR ${payments.status} = 'pending')
+            THEN CAST(${expenseSplits.assignedAmount} AS NUMERIC)
+            ELSE 0
+          END
+        ), 0
+      )::float`,
+      pendingPayments: sql<number>`COUNT(
+        CASE
+          WHEN ${expenseSplits.userId} = ${users.id}
+            AND (${payments.status} IS NULL OR ${payments.status} = 'pending')
+          THEN 1
+        END
+      )::int`,
+      completedPayments: sql<number>`COUNT(
+        CASE
+          WHEN ${expenseSplits.userId} = ${users.id}
+            AND ${payments.status} = 'completed'
+          THEN 1
+        END
+      )::int`,
+    })
+    .from(groupMembers)
+    .innerJoin(users, eq(users.id, groupMembers.userId))
+    .leftJoin(expenseSplits, eq(expenseSplits.userId, users.id))
+    .leftJoin(expenses, eq(expenses.id, expenseSplits.expenseId))
+    .leftJoin(
+      payments,
+      and(eq(payments.expenseId, expenseSplits.expenseId), eq(payments.userId, expenseSplits.userId)),
+    )
+    .where(eq(groupMembers.groupId, groupId))
+    .groupBy(users.id, users.name);
+
+  return {
+    groupId,
+    totalGroupExpenses: Number(totalRow?.totalGroupExpenses ?? 0),
+    members: members.map((member) => ({
+      userId: member.userId,
+      name: member.name,
+      totalOwes: Number(member.totalOwes ?? 0),
+      totalReceives: Number(member.totalReceives ?? 0),
+      pendingPayments: Number(member.pendingPayments ?? 0),
+      completedPayments: Number(member.completedPayments ?? 0),
+    })),
   };
 }
 

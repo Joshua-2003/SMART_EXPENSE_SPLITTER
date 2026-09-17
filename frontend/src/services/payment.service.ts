@@ -11,6 +11,21 @@ export interface MarkSplitAsPaidResult {
   paidAt: string;
 }
 
+export interface GroupSettlementMember {
+  userId: string;
+  name: string;
+  totalOwes: number;
+  totalReceives: number;
+  pendingPayments: number;
+  completedPayments: number;
+}
+
+export interface GroupSettlement {
+  groupId: string;
+  totalGroupExpenses: number;
+  members: GroupSettlementMember[];
+}
+
 export async function markSplitAsPaid(
   groupId: string,
   expenseId: string,
@@ -21,6 +36,20 @@ export async function markSplitAsPaid(
   >(`/groups/${groupId}/expenses/${expenseId}/splits/${splitId}/payment`, {
     status: 'completed',
   });
+
+  const body = response.data;
+
+  if (body.status === 'error') {
+    throw new Error(body.message);
+  }
+
+  return body.data;
+}
+
+export async function getGroupSettlement(groupId: string): Promise<GroupSettlement> {
+  const response = await apiClient.get<
+    ApiResponseSuccess<GroupSettlement> | ApiResponseError
+  >(`/groups/${groupId}/settlement`);
 
   const body = response.data;
 

@@ -42,7 +42,7 @@ This project delivers a group expense management system for friends, roommates, 
 | EXP-003 | EXPENSE | Phase 2 | P1 | Get Expense Details | S | Done |
 | PAY-001 | PAYMENT | Phase 3 | P0 | Mark Payment as Completed | M | Done |
 | PAY-002 | PAYMENT | Phase 3 | P0 | Get Personal Balance in Group | S | Done |
-| PAY-003 | PAYMENT | Phase 3 | P1 | Get Group Settlement Status | M | Not Started |
+| PAY-003 | PAYMENT | Phase 3 | P1 | Get Group Settlement Status | M | Done |
 | ACC-001 | ACCOUNTABILITY | Phase 3 | P1 | Get Member Payment History | M | Not Started |
 | ACC-002 | ACCOUNTABILITY | Phase 3 | P1 | Get Overdue Balances | M | Not Started |
 | ACC-003 | ACCOUNTABILITY | Phase 3 | P1 | Get Member Reliability Indicator | M | Not Started |
@@ -628,6 +628,7 @@ Implement the personal balance endpoint so that authenticated members can retrie
 - Phase: Phase 3
 - Priority: P1
 - Complexity: M
+- Status: Done (2026-09-17)
 
 #### User Story
 > As a group admin or member, I want to see settlement status across all members so that I can quickly identify who has paid and who has not.

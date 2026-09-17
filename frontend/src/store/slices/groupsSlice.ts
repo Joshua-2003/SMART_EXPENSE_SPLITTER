@@ -1,11 +1,13 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Group, GroupMember } from '../../types';
+import { GroupSettlement } from '../../services/payment.service';
 import { mockGroups, defaultCurrentGroup, mockGroupMembers } from '../../mock/groups';
 
 interface GroupsState {
   groups: Group[];
   currentGroup: Group;
   members: GroupMember[];
+  settlement: GroupSettlement | null;
   isLoading: boolean;
   error: string | null;
 }
@@ -19,6 +21,7 @@ const initialState: GroupsState = {
   groups: mockGroups,
   currentGroup: defaultCurrentGroup,
   members: mockGroupMembers[defaultCurrentGroup.id] || [],
+  settlement: null,
   isLoading: false,
   error: null,
 };
@@ -100,6 +103,9 @@ export const groupsSlice = createSlice({
         }
       });
     },
+    setGroupSettlement: (state, action: PayloadAction<GroupSettlement>) => {
+      state.settlement = action.payload;
+    },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
     },
@@ -119,6 +125,7 @@ export const {
   addMember,
   removeMember,
   updateMemberBalances,
+  setGroupSettlement,
   setLoading,
   setError,
 } = groupsSlice.actions;

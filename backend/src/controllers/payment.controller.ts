@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
-import { getPersonalBalance, markSplitAsPaid } from '../services/payment.service.js';
+import { getPersonalBalance, getSettlementStatus, markSplitAsPaid } from '../services/payment.service.js';
 import type {
+  GetGroupSettlementResult,
   GetPersonalBalanceResult,
   MarkPaymentCompletedInput,
   MarkPaymentCompletedResult,
@@ -31,6 +32,42 @@ export async function getGroupBalance(
         totalReceives: Number(result.totalReceives),
         netBalance: Number(result.netBalance),
         lastUpdated: result.lastUpdated.toISOString(),
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getGroupSettlement(
+  req: Request<{ groupId: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const { groupId } = req.params;
+    const actorUserId = req.user?.userId;
+
+    if (!actorUserId) {
+      throw new HttpError(401, 'UNAUTHORIZED', 'Authenticated request is missing a user.');
+    }
+
+    const result: GetGroupSettlementResult = await getSettlementStatus(groupId, actorUserId);
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        groupId: result.groupId,
+        totalGroupExpenses: Number(result.totalGroupExpenses),
+        members: result.members.map((member) => ({
+          userId: member.userId,
+          name: member.name,
+          totalOwes: Number(member.totalOwes),
+          totalReceives: Number(member.totalReceives),
+          pendingPayments: Number(member.pendingPayments),
+          completedPayments: Number(member.completedPayments),
+        })),
       },
       timestamp: new Date().toISOString(),
     });

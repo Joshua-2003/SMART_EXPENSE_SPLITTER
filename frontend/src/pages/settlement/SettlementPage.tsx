@@ -10,20 +10,23 @@ import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Button } from '../../components/ui/Button';
 import { calculateSimplifiedDebts } from '../../utils/debtSimplifier';
 import { SimplifiedDebt } from '../../types';
+import { markSplitAsPaid } from '../../services/payment.service';
 
 export const SettlementPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { currentGroup, members } = useAppSelector((state) => state.groups);
+  const { currentGroup, members, settlement } = useAppSelector((state) => state.groups);
   const { expenses } = useAppSelector((state) => state.expenses);
 
   const [selectedDebt, setSelectedDebt] = useState<SimplifiedDebt | null>(null);
 
-  // Compute metrics
-  const totalGroupExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
-  const pendingSplits = expenses.flatMap((e) =>
-    e.splits.filter((s) => s.paymentStatus === 'pending')
-  );
-  const totalPendingAmount = pendingSplits.reduce((sum, s) => sum + s.assignedAmount, 0);
+  // Compute metrics — prefer backend settlement data, fall back to local computation
+  const totalGroupExpenses =
+    settlement?.totalGroupExpenses ?? expenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalPendingAmount =
+    settlement?.members.reduce((sum, m) => sum + m.pendingPayments, 0) ??
+    expenses
+      .flatMap((e) => e.splits.filter((s) => s.paymentStatus === 'pending'))
+      .reduce((sum, s) => sum + s.assignedAmount, 0);
   const totalSettledAmount = Math.max(0, totalGroupExpenses - totalPendingAmount);
   const settlementPercentage =
     totalGroupExpenses > 0
@@ -32,7 +35,7 @@ export const SettlementPage: React.FC = () => {
 
   const simplifiedDebts = calculateSimplifiedDebts(members);
 
-  const handleConfirmSettlement = () => {
+  const handleConfirmSettlement = async () => {
     if (!selectedDebt) return;
 
     // Find first pending split for this debtor
@@ -42,19 +45,33 @@ export const SettlementPage: React.FC = () => {
       )
     );
 
-    if (matchingExpense) {
-      const split = matchingExpense.splits.find(
-        (s) => s.userId === selectedDebt.fromUserId && s.paymentStatus === 'pending'
+    if (!matchingExpense) return;
+
+    const split = matchingExpense.splits.find(
+      (s) => s.userId === selectedDebt.fromUserId && s.paymentStatus === 'pending'
+    );
+    if (!split) return;
+
+    try {
+      await markSplitAsPaid(currentGroup.id, matchingExpense.id, split.splitId);
+    } catch (err) {
+      dispatch(
+        addToast({
+          type: 'error',
+          title: 'Settlement Failed',
+          message: err instanceof Error ? err.message : 'Could not record payment with server.',
+        })
       );
-      if (split) {
-        dispatch(
-          markSplitCompleted({
-            expenseId: matchingExpense.id,
-            splitId: split.splitId,
-          })
-        );
-      }
+      return;
     }
+
+    // Update local Redux state after successful API call
+    dispatch(
+      markSplitCompleted({
+        expenseId: matchingExpense.id,
+        splitId: split.splitId,
+      })
+    );
 
     // Update balances
     const newBalances: Record<string, number> = {};

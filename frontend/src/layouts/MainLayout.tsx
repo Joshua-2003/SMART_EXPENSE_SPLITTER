@@ -23,8 +23,10 @@ import {
   setCurrentGroup,
   setGroups,
   setGroupDetails,
+  setGroupSettlement,
   setLoading,
   setError,
+  updateMemberBalances,
 } from '../store/slices/groupsSlice';
 import {
   setCreateExpenseOpen,
@@ -42,7 +44,8 @@ import { CreateExpenseModal } from '../components/expenses/CreateExpenseModal';
 import { CreateGroupModal } from '../components/groups/CreateGroupModal';
 import { AddMemberModal } from '../components/members/AddMemberModal';
 import { ToastContainer } from '../components/common/Toast';
-import { getGroupDetails, listGroups } from '../services/group.service';
+import { getGroupBalance, getGroupDetails, listGroups } from '../services/group.service';
+import { getGroupSettlement } from '../services/payment.service';
 import { Group, User } from '../types';
 
 export const MainLayout: React.FC = () => {
@@ -92,6 +95,16 @@ export const MainLayout: React.FC = () => {
       try {
         const details = await getGroupDetails(currentGroup.id);
         dispatch(setGroupDetails(details));
+
+        const balance = await getGroupBalance(currentGroup.id);
+        dispatch(
+          updateMemberBalances({
+            [balance.userId]: balance.netBalance,
+          }),
+        );
+
+        const settlement = await getGroupSettlement(currentGroup.id);
+        dispatch(setGroupSettlement(settlement));
       } catch (err) {
         dispatch(setError(err instanceof Error ? err.message : 'Failed to load group details.'));
       }

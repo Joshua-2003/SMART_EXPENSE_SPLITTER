@@ -11,7 +11,7 @@ import {
   updateGroup,
 } from '../controllers/group.controller.js';
 import { createExpense, getExpenseDetails, listExpenses } from '../controllers/expense.controller.js';
-import { getGroupBalance, markPaymentCompleted } from '../controllers/payment.controller.js';
+import { getGroupBalance, getGroupSettlement, markPaymentCompleted } from '../controllers/payment.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { HttpError } from '../utils/http-error.js';
 
@@ -189,6 +189,14 @@ groupRouter.get(
   [param('groupId').isUUID().withMessage('Invalid group id')],
   validate(),
   getGroupBalance,
+);
+
+groupRouter.get(
+  '/:groupId/settlement',
+  authenticate,
+  [param('groupId').isUUID().withMessage('Invalid group id')],
+  validate(),
+  getGroupSettlement,
 );
 
 groupRouter.get(
