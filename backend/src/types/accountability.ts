@@ -17,3 +17,25 @@ export interface GetMemberPaymentHistoryResult {
   paymentHistory: PaymentHistoryItem[];
   reliabilityIndicator: ReliabilityIndicator;
 }
+
+export interface OverdueSplitItem {
+  splitId: string;
+  expenseId: string;
+  expenseDescription: string;
+  amount: number;
+  createdAt: Date;
+  daysOverdue: number;
+}
+
+export interface OverdueMemberItem {
+  userId: string;
+  name: string;
+  totalOverdueAmount: number;
+  overdueSplits: OverdueSplitItem[];
+}
+
+export interface GetOverdueBalancesResult {
+  groupId: string;
+  overdueThreshold: number;
+  overdueMembers: OverdueMemberItem[];
+}

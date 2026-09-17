@@ -4,6 +4,7 @@ import {
   MemberReliability,
   InAppNotification,
 } from '../../types';
+import { GroupOverdueBalances } from '../../services/accountability.service';
 import { mockPaymentHistory, mockMemberReliability } from '../../mock/history';
 import { mockNotifications } from '../../mock/notifications';
 
@@ -12,6 +13,7 @@ interface AccountabilityState {
   reliabilityScores: Record<string, MemberReliability>;
   notifications: InAppNotification[];
   overdueThresholdDays: number;
+  overdueBalances: GroupOverdueBalances | null;
   isLoading: boolean;
   error: string | null;
 }
@@ -21,6 +23,7 @@ const initialState: AccountabilityState = {
   reliabilityScores: mockMemberReliability,
   notifications: mockNotifications,
   overdueThresholdDays: 7,
+  overdueBalances: null,
   isLoading: false,
   error: null,
 };
@@ -53,6 +56,9 @@ export const accountabilitySlice = createSlice({
     ) => {
       state.reliabilityScores[action.payload.userId] = action.payload.reliability;
     },
+    setOverdueBalances: (state, action: PayloadAction<GroupOverdueBalances | null>) => {
+      state.overdueBalances = action.payload;
+    },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
     },
@@ -69,6 +75,7 @@ export const {
   markNotificationRead,
   markAllNotificationsRead,
   updateMemberReliability,
+  setOverdueBalances,
   setLoading,
   setError,
 } = accountabilitySlice.actions;

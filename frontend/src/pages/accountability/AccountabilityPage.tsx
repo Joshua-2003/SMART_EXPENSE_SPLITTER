@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ShieldAlert,
   AlertTriangle,
@@ -10,6 +10,7 @@ import {
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
   setOverdueThreshold,
+  setOverdueBalances,
   addNotification,
 } from '../../store/slices/accountabilitySlice';
 import { addToast } from '../../store/slices/uiSlice';
@@ -17,21 +18,32 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Button } from '../../components/ui/Button';
 import { MemberAccountabilityModal } from '../../components/members/MemberAccountabilityModal';
+import { getOverdueBalances } from '../../services/accountability.service';
 import { GroupMember } from '../../types';
 
 export const AccountabilityPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { currentGroup, members } = useAppSelector((state) => state.groups);
   const { expenses } = useAppSelector((state) => state.expenses);
-  const { overdueThresholdDays, reliabilityScores } = useAppSelector(
-    (state) => state.accountability
-  );
+  const {
+    overdueThresholdDays,
+    reliabilityScores,
+    overdueBalances,
+  } = useAppSelector((state) => state.accountability);
 
   const [selectedMember, setSelectedMember] = useState<GroupMember | null>(null);
 
+  useEffect(() => {
+    if (!currentGroup.id) return;
+
+    getOverdueBalances(currentGroup.id, overdueThresholdDays)
+      .then((data) => dispatch(setOverdueBalances(data)))
+      .catch(() => dispatch(setOverdueBalances(null)));
+  }, [currentGroup.id, overdueThresholdDays, dispatch]);
+
   // Compute overdue splits
   const now = new Date().getTime();
-  const overdueSplits = expenses.flatMap((exp) =>
+  const localOverdueSplits = expenses.flatMap((exp) =>
     exp.splits
       .filter((split) => split.paymentStatus === 'pending')
       .map((split) => {
@@ -47,6 +59,19 @@ export const AccountabilityPage: React.FC = () => {
       })
       .filter((s) => s.daysOverdue >= overdueThresholdDays)
   );
+
+  const overdueSplits = overdueBalances
+    ? overdueBalances.overdueMembers.flatMap((member) =>
+        member.overdueSplits.map((split) => ({
+          splitId: split.splitId,
+          expenseDescription: split.expenseDescription,
+          assignedAmount: split.amount,
+          daysOverdue: split.daysOverdue,
+          createdAt: split.createdAt,
+          userName: member.name,
+        }))
+      )
+    : localOverdueSplits;
 
   const handleRemindSingle = (memberName: string, desc: string, amt: number) => {
     dispatch(

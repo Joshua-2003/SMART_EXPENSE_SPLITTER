@@ -1,7 +1,54 @@
 import type { NextFunction, Request, Response } from 'express';
-import { getMemberPaymentHistory } from '../services/accountability.service.js';
-import type { GetMemberPaymentHistoryResult } from '../types/accountability.js';
+import { getMemberPaymentHistory, getOverdueBalances } from '../services/accountability.service.js';
+import type { GetMemberPaymentHistoryResult, GetOverdueBalancesResult } from '../types/accountability.js';
 import { HttpError } from '../utils/http-error.js';
+
+export async function getOverdueBalancesHandler(
+  req: Request<{ groupId: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const { groupId } = req.params;
+    const actorUserId = req.user?.userId;
+
+    if (!actorUserId) {
+      throw new HttpError(401, 'UNAUTHORIZED', 'Authenticated request is missing a user.');
+    }
+
+    const overdueAfterDays = req.query.overdueAfterDays ? Number(req.query.overdueAfterDays) : 7;
+
+    const result: GetOverdueBalancesResult = await getOverdueBalances(
+      groupId,
+      actorUserId,
+      overdueAfterDays,
+    );
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        groupId: result.groupId,
+        overdueThreshold: result.overdueThreshold,
+        overdueMembers: result.overdueMembers.map((member) => ({
+          userId: member.userId,
+          name: member.name,
+          totalOverdueAmount: Number(member.totalOverdueAmount),
+          overdueSplits: member.overdueSplits.map((split) => ({
+            splitId: split.splitId,
+            expenseId: split.expenseId,
+            expenseDescription: split.expenseDescription,
+            amount: Number(split.amount),
+            createdAt: new Date(split.createdAt).toISOString(),
+            daysOverdue: split.daysOverdue,
+          })),
+        })),
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 
 export async function getMemberHistory(
   req: Request<{ groupId: string; userId: string }>,

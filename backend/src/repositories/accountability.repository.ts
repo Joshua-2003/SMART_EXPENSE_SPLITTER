@@ -5,8 +5,10 @@ import {
   expenses,
   paymentHistory,
   payments,
+  users,
 } from '../models/index.js';
 import type {
+  OverdueMemberItem,
   PaymentHistoryItem,
   ReliabilityIndicator,
 } from '../types/accountability.js';
@@ -114,4 +116,66 @@ export async function getMemberReliability(
   }
 
   return 'At Risk';
+}
+
+export async function getOverdueBalancesForGroup(
+  groupId: string,
+  overdueAfterDays: number,
+): Promise<OverdueMemberItem[]> {
+  const rows = await db
+    .select({
+      userId: users.id,
+      name: users.name,
+      splitId: expenseSplits.id,
+      expenseId: expenses.id,
+      expenseDescription: expenses.description,
+      amount: expenseSplits.assignedAmount,
+      createdAt: expenses.createdAt,
+      daysOverdue: sql<number>`FLOOR(EXTRACT(EPOCH FROM (NOW() - ${expenses.createdAt})) / 86400)::int`,
+    })
+    .from(expenseSplits)
+    .innerJoin(expenses, eq(expenses.id, expenseSplits.expenseId))
+    .innerJoin(users, eq(users.id, expenseSplits.userId))
+    .leftJoin(
+      payments,
+      and(eq(payments.expenseId, expenseSplits.expenseId), eq(payments.userId, expenseSplits.userId)),
+    )
+    .where(
+      and(
+        eq(expenses.groupId, groupId),
+        sql`(${payments.status} IS NULL OR ${payments.status} <> 'completed')`,
+        sql`${expenses.createdAt} < NOW() - make_interval(days => ${overdueAfterDays})`,
+      ),
+    )
+    .orderBy(users.id, expenses.createdAt);
+
+  const grouped = new Map<string, OverdueMemberItem>();
+
+  for (const row of rows) {
+    let member = grouped.get(row.userId);
+
+    if (!member) {
+      member = {
+        userId: row.userId,
+        name: row.name,
+        totalOverdueAmount: 0,
+        overdueSplits: [],
+      };
+      grouped.set(row.userId, member);
+    }
+
+    const amount = Number(row.amount);
+
+    member.totalOverdueAmount += amount;
+    member.overdueSplits.push({
+      splitId: row.splitId,
+      expenseId: row.expenseId,
+      expenseDescription: row.expenseDescription,
+      amount,
+      createdAt: row.createdAt,
+      daysOverdue: Number(row.daysOverdue),
+    });
+  }
+
+  return Array.from(grouped.values());
 }

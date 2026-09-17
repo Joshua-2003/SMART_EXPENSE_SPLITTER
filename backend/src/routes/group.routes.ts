@@ -12,7 +12,7 @@ import {
 } from '../controllers/group.controller.js';
 import { createExpense, getExpenseDetails, listExpenses } from '../controllers/expense.controller.js';
 import { getGroupBalance, getGroupSettlement, markPaymentCompleted } from '../controllers/payment.controller.js';
-import { getMemberHistory } from '../controllers/accountability.controller.js';
+import { getMemberHistory, getOverdueBalancesHandler } from '../controllers/accountability.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { HttpError } from '../utils/http-error.js';
 
@@ -217,6 +217,20 @@ groupRouter.get(
   [param('groupId').isUUID().withMessage('Invalid group id')],
   validate(),
   getGroupSettlement,
+);
+
+groupRouter.get(
+  '/:groupId/overdue',
+  authenticate,
+  [
+    param('groupId').isUUID().withMessage('Invalid group id'),
+    query('overdueAfterDays')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('overdueAfterDays must be a positive integer'),
+  ],
+  validate(),
+  getOverdueBalancesHandler,
 );
 
 groupRouter.get(
