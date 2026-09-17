@@ -38,6 +38,7 @@ import {
 import {
   markNotificationRead,
   markAllNotificationsRead,
+  setNotifications,
 } from '../store/slices/accountabilitySlice';
 import { ROUTES } from '../constants/routes';
 import { CreateExpenseModal } from '../components/expenses/CreateExpenseModal';
@@ -46,6 +47,7 @@ import { AddMemberModal } from '../components/members/AddMemberModal';
 import { ToastContainer } from '../components/common/Toast';
 import { getGroupBalance, getGroupDetails, listGroups } from '../services/group.service';
 import { getGroupSettlement } from '../services/payment.service';
+import { getNotifications, markNotificationAsRead } from '../services/notification.service';
 import { Group, User } from '../types';
 
 export const MainLayout: React.FC = () => {
@@ -91,6 +93,19 @@ export const MainLayout: React.FC = () => {
   }, [dispatch]);
 
   useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        const { notifications } = await getNotifications({ limit: 20 });
+        dispatch(setNotifications(notifications));
+      } catch {
+        // Keep the existing fallback list if the notifications API is unavailable.
+      }
+    };
+
+    void loadNotifications();
+  }, [dispatch]);
+
+  useEffect(() => {
     const loadGroupDetails = async () => {
       try {
         const details = await getGroupDetails(currentGroup.id);
@@ -114,6 +129,24 @@ export const MainLayout: React.FC = () => {
   }, [currentGroup.id, dispatch]);
 
   const unreadNotifs = notifications.filter((n) => !n.read);
+
+  const handleMarkRead = async (notificationId: string) => {
+    try {
+      await markNotificationAsRead(notificationId);
+      dispatch(markNotificationRead(notificationId));
+    } catch {
+      // Keep local read state when the API is unavailable.
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await Promise.all(unreadNotifs.map((n) => markNotificationAsRead(n.notificationId)));
+      dispatch(markAllNotificationsRead());
+    } catch {
+      // Keep local read state when the API is unavailable.
+    }
+  };
 
   const navItems = [
     { label: 'Dashboard', path: ROUTES.DASHBOARD, icon: LayoutDashboard },
@@ -400,7 +433,7 @@ export const MainLayout: React.FC = () => {
                     {unreadNotifs.length > 0 && (
                       <button
                         type="button"
-                        onClick={() => dispatch(markAllNotificationsRead())}
+                        onClick={() => void handleMarkAllRead()}
                         className="text-[11px] text-emerald-600 hover:text-emerald-700 font-medium"
                       >
                         Mark all as read
@@ -416,7 +449,7 @@ export const MainLayout: React.FC = () => {
                       notifications.map((n) => (
                         <div
                           key={n.notificationId}
-                          onClick={() => dispatch(markNotificationRead(n.notificationId))}
+                          onClick={() => void handleMarkRead(n.notificationId)}
                           className={`p-3 text-xs hover:bg-slate-50 cursor-pointer ${
                             !n.read ? 'bg-emerald-50/30' : ''
                           }`}

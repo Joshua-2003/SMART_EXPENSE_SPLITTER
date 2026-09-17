@@ -41,6 +41,9 @@ export const accountabilitySlice = createSlice({
     addNotification: (state, action: PayloadAction<InAppNotification>) => {
       state.notifications.unshift(action.payload);
     },
+    setNotifications: (state, action: PayloadAction<InAppNotification[]>) => {
+      state.notifications = action.payload;
+    },
     markNotificationRead: (state, action: PayloadAction<string>) => {
       const notif = state.notifications.find((n) => n.notificationId === action.payload);
       if (notif) notif.read = true;
@@ -72,6 +75,7 @@ export const {
   setOverdueThreshold,
   addPaymentHistoryRecord,
   addNotification,
+  setNotifications,
   markNotificationRead,
   markAllNotificationsRead,
   updateMemberReliability,
