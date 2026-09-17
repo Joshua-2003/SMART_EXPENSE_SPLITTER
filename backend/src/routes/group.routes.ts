@@ -12,6 +12,7 @@ import {
 } from '../controllers/group.controller.js';
 import { createExpense, getExpenseDetails, listExpenses } from '../controllers/expense.controller.js';
 import { getGroupBalance, getGroupSettlement, markPaymentCompleted } from '../controllers/payment.controller.js';
+import { getMemberHistory } from '../controllers/accountability.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { HttpError } from '../utils/http-error.js';
 
@@ -121,6 +122,25 @@ groupRouter.delete(
   ],
   validate(),
   removeMember,
+);
+
+groupRouter.get(
+  '/:groupId/members/:userId/history',
+  authenticate,
+  [
+    param('groupId').isUUID().withMessage('Invalid group id'),
+    param('userId').isUUID().withMessage('Invalid user id'),
+    query('limit')
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage('Limit must be an integer between 1 and 100'),
+    query('offset')
+      .optional()
+      .isInt({ min: 0 })
+      .withMessage('Offset must be a non-negative integer'),
+  ],
+  validate(),
+  getMemberHistory,
 );
 
 groupRouter.post(

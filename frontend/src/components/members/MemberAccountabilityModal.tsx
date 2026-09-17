@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   X,
   Clock,
@@ -6,13 +6,17 @@ import {
   AlertTriangle,
   Bell,
   History,
+  Loader2,
 } from 'lucide-react';
 import { GroupMember } from '../../types';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { addNotification } from '../../store/slices/accountabilitySlice';
 import { addToast } from '../../store/slices/uiSlice';
 import { StatusBadge } from '../common/StatusBadge';
-import { mockHistory } from '../../mock/history';
+import {
+  getMemberPaymentHistory,
+  MemberPaymentHistory,
+} from '../../services/accountability.service';
 
 interface MemberAccountabilityModalProps {
   member: GroupMember | null;
@@ -26,6 +30,39 @@ export const MemberAccountabilityModal: React.FC<MemberAccountabilityModalProps>
   const dispatch = useAppDispatch();
   const { currentGroup } = useAppSelector((state) => state.groups);
   const { reliabilityScores } = useAppSelector((state) => state.accountability);
+
+  const [memberHistory, setMemberHistory] = useState<MemberPaymentHistory | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  useEffect(() => {
+    if (!member) return;
+
+    let cancelled = false;
+    setHistoryLoading(true);
+
+    getMemberPaymentHistory(currentGroup.id, member.userId)
+      .then((data) => {
+        if (!cancelled) setMemberHistory(data);
+      })
+      .catch((error: Error) => {
+        if (!cancelled) {
+          dispatch(
+            addToast({
+              type: 'error',
+              title: 'History Load Failed',
+              message: error.message || 'Unable to load payment history.',
+            })
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setHistoryLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [member, currentGroup.id, dispatch]);
 
   if (!member) return null;
 
@@ -41,7 +78,7 @@ export const MemberAccountabilityModal: React.FC<MemberAccountabilityModalProps>
     },
   };
 
-  const history = mockHistory.filter((h) => h.userId === member.userId);
+  const history = memberHistory?.paymentHistory ?? [];
 
   const handleSendGentleReminder = () => {
     dispatch(
@@ -86,7 +123,10 @@ export const MemberAccountabilityModal: React.FC<MemberAccountabilityModalProps>
               <div className="flex items-center gap-2">
                 <h2 className="text-sm font-semibold text-slate-900">{member.name}</h2>
                 <StatusBadge role={member.role} size="sm" />
-                <StatusBadge reliability={reliability.indicator} size="sm" />
+                <StatusBadge
+                  reliability={memberHistory?.reliabilityIndicator ?? reliability.indicator}
+                  size="sm"
+                />
               </div>
               <p className="text-xs text-slate-500 font-mono mt-0.5">{member.email}</p>
             </div>
@@ -206,11 +246,16 @@ export const MemberAccountabilityModal: React.FC<MemberAccountabilityModalProps>
                 Payment Behavior History
               </h3>
               <span className="text-[11px] text-slate-400 font-mono">
-                {history.length} record(s)
+                {historyLoading ? 'Loading…' : `${history.length} record(s)`}
               </span>
             </div>
 
-            {history.length === 0 ? (
+            {historyLoading ? (
+              <div className="p-6 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                Loading payment history…
+              </div>
+            ) : history.length === 0 ? (
               <div className="p-6 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl">
                 No past payment history records for this member yet.
               </div>

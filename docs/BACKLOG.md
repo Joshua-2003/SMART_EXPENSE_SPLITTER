@@ -43,7 +43,7 @@ This project delivers a group expense management system for friends, roommates, 
 | PAY-001 | PAYMENT | Phase 3 | P0 | Mark Payment as Completed | M | Done |
 | PAY-002 | PAYMENT | Phase 3 | P0 | Get Personal Balance in Group | S | Done |
 | PAY-003 | PAYMENT | Phase 3 | P1 | Get Group Settlement Status | M | Done |
-| ACC-001 | ACCOUNTABILITY | Phase 3 | P1 | Get Member Payment History | M | Not Started |
+| ACC-001 | ACCOUNTABILITY | Phase 3 | P1 | Get Member Payment History | M | Done |
 | ACC-002 | ACCOUNTABILITY | Phase 3 | P1 | Get Overdue Balances | M | Not Started |
 | ACC-003 | ACCOUNTABILITY | Phase 3 | P1 | Get Member Reliability Indicator | M | Not Started |
 | DASH-001 | DASHBOARD | Phase 4 | P0 | Get Group Dashboard | M | Not Started |
@@ -673,6 +673,7 @@ Implement the group settlement summary endpoint that reveals the payment status 
 - Phase: Phase 3
 - Priority: P1
 - Complexity: M
+- Status: Done (2026-09-17)
 
 #### User Story
 > As a group member or admin, I want to view a member's payment history so that I can understand payment behavior and accountability.
@@ -977,3 +978,4 @@ DASH-001
 | 1.10 | 2026-09-16 | EXP-002 (List Group Expenses) completed: protected GET /groups/{groupId}/expenses with member-only access control, express-validator query rules (limit/offset/sortBy), paginated listing with creator names and per-expense split breakdown sorted by date or amount descending; ExpensesPage reloads real expense data on group change. |
 | 1.11 | 2026-09-16 | EXP-003 (Get Expense Details) completed: protected GET /groups/{groupId}/expenses/{expenseId} with member-only access control, group/expense mismatch 404s, and per-split paymentDetail joined from the payments table (coalesced to pending); ExpenseDetailModal now fetches live split details on row click. |
 | 1.12 | 2026-09-17 | PAY-001 (Mark Payment as Completed) completed: added MarkPaymentCompleted types, protected PATCH /groups/:groupId/expenses/:expenseId/splits/:splitId/payment (admin-or-self authorization with admin override, 400 on invalid status, 404 group/expense/split, 403 non-member), payment repository upset + payment history, controller + service wired, group PATCH route registered, and ExpenseDetailModal now calls the real markSplitAsPaid API via payment.service with success/error toasts and live member balance updates. |
+| 1.13 | 2026-09-17 | ACC-001 (Get Member Payment History) completed: added accountability types, repository (payment_history joined to payments/expenses/expense_splits for history + reliability computed from expense_splits/payments with 7-day overdue threshold), service with 404 group/member and admin-or-self authorization, controller, and protected GET /groups/:groupId/members/:userId/history with limit/offset query validation (defaults 30/0); frontend accountability.service added and MemberAccountabilityModal now fetches the live member history with loading/error handling instead of mockHistory. |
