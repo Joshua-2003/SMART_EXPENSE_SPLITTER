@@ -12,7 +12,7 @@ import {
 } from '../controllers/group.controller.js';
 import { createExpense, getExpenseDetails, listExpenses } from '../controllers/expense.controller.js';
 import { getGroupBalance, getGroupSettlement, markPaymentCompleted } from '../controllers/payment.controller.js';
-import { getMemberHistory, getOverdueBalancesHandler } from '../controllers/accountability.controller.js';
+import { getMemberHistory, getMemberReliabilityHandler, getOverdueBalancesHandler } from '../controllers/accountability.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { HttpError } from '../utils/http-error.js';
 
@@ -141,6 +141,17 @@ groupRouter.get(
   ],
   validate(),
   getMemberHistory,
+);
+
+groupRouter.get(
+  '/:groupId/members/:userId/reliability',
+  authenticate,
+  [
+    param('groupId').isUUID().withMessage('Invalid group id'),
+    param('userId').isUUID().withMessage('Invalid user id'),
+  ],
+  validate(),
+  getMemberReliabilityHandler,
 );
 
 groupRouter.post(

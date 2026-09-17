@@ -15,8 +15,10 @@ import { addToast } from '../../store/slices/uiSlice';
 import { StatusBadge } from '../common/StatusBadge';
 import {
   getMemberPaymentHistory,
+  getMemberReliability,
   MemberPaymentHistory,
 } from '../../services/accountability.service';
+import { MemberReliability } from '../../types';
 
 interface MemberAccountabilityModalProps {
   member: GroupMember | null;
@@ -33,6 +35,8 @@ export const MemberAccountabilityModal: React.FC<MemberAccountabilityModalProps>
 
   const [memberHistory, setMemberHistory] = useState<MemberPaymentHistory | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [memberReliability, setMemberReliability] = useState<MemberReliability | null>(null);
+  const [reliabilityLoading, setReliabilityLoading] = useState(false);
 
   useEffect(() => {
     if (!member) return;
@@ -64,19 +68,56 @@ export const MemberAccountabilityModal: React.FC<MemberAccountabilityModalProps>
     };
   }, [member, currentGroup.id, dispatch]);
 
+  useEffect(() => {
+    if (!member) return;
+
+    let cancelled = false;
+    setReliabilityLoading(true);
+
+    getMemberReliability(currentGroup.id, member.userId)
+      .then((data) => {
+        if (!cancelled) setMemberReliability(data);
+      })
+      .catch((error: Error) => {
+        if (!cancelled) {
+          dispatch(
+            addToast({
+              type: 'error',
+              title: 'Reliability Load Failed',
+              message:
+                error.message || 'Unable to load reliability score. Showing cached data.',
+            })
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setReliabilityLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [member, currentGroup.id, dispatch]);
+
   if (!member) return null;
 
-  const reliability = reliabilityScores[member.userId] || {
-    indicator: 'Reliable',
-    score: 85,
-    metrics: {
-      totalPayments: 5,
-      completedOnTime: 4,
-      completedLate: 1,
-      stillPending: 0,
-      completionRate: 80,
-    },
-  };
+  const reliability = memberReliability
+    ? {
+        indicator: memberReliability.indicator,
+        score: memberReliability.score,
+        metrics: memberReliability.metrics,
+      }
+    : reliabilityScores[member.userId] || {
+        indicator: 'Reliable',
+        score: 85,
+        metrics: {
+          totalPayments: 5,
+          completedOnTime: 4,
+          completedLate: 1,
+          stillPending: 0,
+          completionRate: 80,
+        },
+      };
 
   const history = memberHistory?.paymentHistory ?? [];
 
@@ -124,7 +165,7 @@ export const MemberAccountabilityModal: React.FC<MemberAccountabilityModalProps>
                 <h2 className="text-sm font-semibold text-slate-900">{member.name}</h2>
                 <StatusBadge role={member.role} size="sm" />
                 <StatusBadge
-                  reliability={memberHistory?.reliabilityIndicator ?? reliability.indicator}
+                  reliability={reliability.indicator}
                   size="sm"
                 />
               </div>
@@ -151,6 +192,11 @@ export const MemberAccountabilityModal: React.FC<MemberAccountabilityModalProps>
                 </span>
                 <p className="text-[11px] text-slate-500 mt-0.5">
                   Calculated from on-time payment consistency across shared splits.
+                  {reliabilityLoading
+                    ? ' Refreshing…'
+                    : memberReliability
+                    ? ` • Updated ${new Date(memberReliability.calculatedAt).toLocaleDateString()}`
+                    : ''}
                 </p>
               </div>
               <div className="text-right">

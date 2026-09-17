@@ -10,7 +10,7 @@ import {
 import type {
   OverdueMemberItem,
   PaymentHistoryItem,
-  ReliabilityIndicator,
+  ReliabilityMetrics,
 } from '../types/accountability.js';
 
 export async function getMemberPaymentHistory(
@@ -67,20 +67,30 @@ export async function getMemberPaymentHistory(
   };
 }
 
-export async function getMemberReliability(
+export async function getMemberReliabilityMetrics(
   groupId: string,
   userId: string,
-): Promise<ReliabilityIndicator> {
+): Promise<ReliabilityMetrics> {
   const [row] = await db
     .select({
-      total: sql<number>`COUNT(*)::int`,
-      completed: sql<number>`COUNT(
-        CASE WHEN ${payments.status} = 'completed' THEN 1 END
-      )::int`,
-      overdue: sql<number>`COUNT(
+      totalPayments: sql<number>`COUNT(*)::int`,
+      completedOnTime: sql<number>`COUNT(
         CASE
-          WHEN (${payments.status} IS NULL OR ${payments.status} <> 'completed')
-            AND ${expenses.createdAt} < (NOW() - INTERVAL '7 days')
+          WHEN ${payments.status} = 'completed'
+            AND (${payments.paidAt} - ${expenses.createdAt}) <= INTERVAL '7 days'
+          THEN 1
+        END
+      )::int`,
+      completedLate: sql<number>`COUNT(
+        CASE
+          WHEN ${payments.status} = 'completed'
+            AND (${payments.paidAt} - ${expenses.createdAt}) > INTERVAL '7 days'
+          THEN 1
+        END
+      )::int`,
+      stillPending: sql<number>`COUNT(
+        CASE
+          WHEN ${payments.status} IS NULL OR ${payments.status} <> 'completed'
           THEN 1
         END
       )::int`,
@@ -99,23 +109,19 @@ export async function getMemberReliability(
     )
     .limit(1);
 
-  const total = Number(row?.total ?? 0);
-  const completed = Number(row?.completed ?? 0);
-  const overdue = Number(row?.overdue ?? 0);
+  const totalPayments = Number(row?.totalPayments ?? 0);
+  const completedOnTime = Number(row?.completedOnTime ?? 0);
+  const completedLate = Number(row?.completedLate ?? 0);
+  const stillPending = Number(row?.stillPending ?? 0);
 
-  if (total === 0 || overdue === 0) {
-    return 'Reliable';
-  }
-
-  if (overdue >= 3) {
-    return 'Unreliable';
-  }
-
-  if (completed === 0) {
-    return 'Unreliable';
-  }
-
-  return 'At Risk';
+  return {
+    totalPayments,
+    completedOnTime,
+    completedLate,
+    stillPending,
+    completionRate:
+      totalPayments === 0 ? 0 : Math.round((completedOnTime / totalPayments) * 100),
+  };
 }
 
 export async function getOverdueBalancesForGroup(

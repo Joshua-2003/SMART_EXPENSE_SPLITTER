@@ -1,7 +1,57 @@
 import type { NextFunction, Request, Response } from 'express';
-import { getMemberPaymentHistory, getOverdueBalances } from '../services/accountability.service.js';
-import type { GetMemberPaymentHistoryResult, GetOverdueBalancesResult } from '../types/accountability.js';
+import {
+  getMemberPaymentHistory,
+  getMemberReliability,
+  getOverdueBalances,
+} from '../services/accountability.service.js';
+import type {
+  GetMemberPaymentHistoryResult,
+  GetMemberReliabilityResult,
+  GetOverdueBalancesResult,
+} from '../types/accountability.js';
 import { HttpError } from '../utils/http-error.js';
+
+export async function getMemberReliabilityHandler(
+  req: Request<{ groupId: string; userId: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const { groupId, userId } = req.params;
+    const actorUserId = req.user?.userId;
+
+    if (!actorUserId) {
+      throw new HttpError(401, 'UNAUTHORIZED', 'Authenticated request is missing a user.');
+    }
+
+    const result: GetMemberReliabilityResult = await getMemberReliability(
+      groupId,
+      userId,
+      actorUserId,
+    );
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        userId: result.userId,
+        name: result.name,
+        indicator: result.indicator,
+        score: result.score,
+        metrics: {
+          totalPayments: result.metrics.totalPayments,
+          completedOnTime: result.metrics.completedOnTime,
+          completedLate: result.metrics.completedLate,
+          stillPending: result.metrics.stillPending,
+          completionRate: result.metrics.completionRate,
+        },
+        calculatedAt: result.calculatedAt.toISOString(),
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 
 export async function getOverdueBalancesHandler(
   req: Request<{ groupId: string }>,

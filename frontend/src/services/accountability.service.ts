@@ -1,6 +1,7 @@
 import apiClient from './axios';
 import type { ApiResponseError, ApiResponseSuccess } from '../types/api';
 import type {
+  MemberReliability,
   OverdueMemberReport,
   PaymentHistoryRecord,
   ReliabilityIndicator,
@@ -33,6 +34,23 @@ export async function getMemberPaymentHistory(
       offset,
     },
   });
+
+  const body = response.data;
+
+  if (body.status === 'error') {
+    throw new Error(body.message);
+  }
+
+  return body.data;
+}
+
+export async function getMemberReliability(
+  groupId: string,
+  userId: string,
+): Promise<MemberReliability> {
+  const response = await apiClient.get<
+    ApiResponseSuccess<MemberReliability> | ApiResponseError
+  >(`/groups/${groupId}/members/${userId}/reliability`);
 
   const body = response.data;
 

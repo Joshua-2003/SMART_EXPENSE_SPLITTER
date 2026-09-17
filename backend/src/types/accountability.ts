@@ -39,3 +39,20 @@ export interface GetOverdueBalancesResult {
   overdueThreshold: number;
   overdueMembers: OverdueMemberItem[];
 }
+
+export interface ReliabilityMetrics {
+  totalPayments: number;
+  completedOnTime: number;
+  completedLate: number;
+  stillPending: number;
+  completionRate: number;
+}
+
+export interface GetMemberReliabilityResult {
+  userId: string;
+  name: string;
+  indicator: ReliabilityIndicator;
+  score: number;
+  metrics: ReliabilityMetrics;
+  calculatedAt: Date;
+}
