@@ -15,6 +15,9 @@ This project delivers a group expense management system for friends, roommates, 
 | ACCOUNTABILITY | Payment history, overdue balance detection, and reliability indicator logic | PRD, API Contract, DB schema |
 | NOTIFICATION | Notification retrieval and read-state tracking | PRD, API Contract, DB schema |
 | DASHBOARD | Group summary and overview reporting | PRD, API Contract, DB schema |
+| EMAIL | Email verification, invitations, password recovery, and email reminders | PRD, System Design, Open Questions |
+| PLATFORM | Cross-cutting validation, security, reliability, performance, and operational concerns | PRD, System Design, API Contract |
+| UX | Accessibility, responsive workflows, feedback states, and user-friendly error handling | PRD, System Design |
 
 ## Phase Summary
 
@@ -24,6 +27,9 @@ This project delivers a group expense management system for friends, roommates, 
 | Phase 2: Group & Expense Core | Groups, memberships, and shared expense creation/visibility | GROUP-001, GROUP-002, GROUP-003, GROUP-004, GROUP-005, EXP-001, EXP-002, EXP-003 |
 | Phase 3: Settlement & Accountability | Payment completion, balances, overdue tracking, and reliability reporting | PAY-001, PAY-002, PAY-003, ACC-001, ACC-002, ACC-003 |
 | Phase 4: Reporting & Notifications | Dashboard, reminders, and read-state notification controls | DASH-001, NOTIF-001 |
+| Phase 5: Reconciliation & Production Hardening | Contract/schema alignment, correctness bugs, session reliability, authoritative live state, and regression coverage | HARD-001, HARD-002, HARD-003, HARD-004, HARD-005, HARD-006, HARD-007, HARD-008, HARD-009 |
+| Phase 6: Product Completeness & Operational Readiness | Email, durable reminders, validation, UX feedback, accessibility, security, performance, observability, and release operations | PROD-001, PROD-002, PROD-003, PROD-004, PROD-005, PROD-006, PROD-007, PROD-008, PROD-009, PROD-010 |
+| Phase 7: Advanced Collaboration & Intelligence | Flexible expense workflows, recurring expenses, analytics, exports, currencies, real-time updates, and payment integrations | ADV-001, ADV-002, ADV-003, ADV-004, ADV-005, ADV-006, ADV-007, ADV-008, ADV-009 |
 
 ## Complete Backlog Table
 
@@ -45,9 +51,37 @@ This project delivers a group expense management system for friends, roommates, 
 | PAY-003 | PAYMENT | Phase 3 | P1 | Get Group Settlement Status | M | Done |
 | ACC-001 | ACCOUNTABILITY | Phase 3 | P1 | Get Member Payment History | M | Done |
 | ACC-002 | ACCOUNTABILITY | Phase 3 | P1 | Get Overdue Balances | M | Done |
-| ACC-003 | ACCOUNTABILITY | Phase 3 | P1 | Get Member Reliability Indicator | M | Not Started |
-| DASH-001 | DASHBOARD | Phase 4 | P0 | Get Group Dashboard | M | Not Started |
+| ACC-003 | ACCOUNTABILITY | Phase 3 | P1 | Get Member Reliability Indicator | M | Done |
+| DASH-001 | DASHBOARD | Phase 4 | P0 | Get Group Dashboard | M | Done |
 | NOTIF-001 | NOTIFICATION | Phase 4 | P1 | Manage User Notifications | M | Done |
+| HARD-001 | PLATFORM | Phase 5 | P0 | Reconcile Contract and Backlog Coverage | M | Not Started |
+| HARD-002 | DATA | Phase 5 | P0 | Correct Schema Constraints, Indexes, and Views | M | Not Started |
+| HARD-003 | PAYMENT | Phase 5 | P0 | Enforce Group-Isolated, Idempotent Settlement | L | Not Started |
+| HARD-004 | PAYMENT | Phase 5 | P0 | Define and Materialize Payment Lifecycle | M | Not Started |
+| HARD-005 | AUTH | Phase 5 | P0 | Make Authentication Durable Across Reloads | M | Not Started |
+| HARD-006 | GROUP | Phase 5 | P0 | Protect Active Obligations During Member Changes | M | Not Started |
+| HARD-007 | GROUP | Phase 5 | P1 | Complete Group Delete and Member List Contract | M | Not Started |
+| HARD-008 | FRONTEND | Phase 5 | P1 | Remove Mock Fallbacks and Fix Live State Propagation | L | Not Started |
+| HARD-009 | QUALITY | Phase 5 | P1 | Add Regression Tests and Clean Verification Gates | L | Not Started |
+| PROD-001 | EMAIL | Phase 6 | P0 | Add Email Verification and Password Recovery | M | Not Started |
+| PROD-002 | EMAIL | Phase 6 | P0 | Persist Invitations and Email Reminders | L | Not Started |
+| PROD-003 | NOTIFICATION | Phase 6 | P1 | Add Notification Triggers, Preferences, and Delivery Status | M | Not Started |
+| PROD-004 | UX | Phase 6 | P0 | Standardize Validation and User-Friendly Error States | M | Not Started |
+| PROD-005 | UX | Phase 6 | P1 | Complete Responsive and Accessible Workflows | L | Not Started |
+| PROD-006 | PLATFORM | Phase 6 | P0 | Harden Authentication and API Security | L | Not Started |
+| PROD-007 | PLATFORM | Phase 6 | P1 | Improve Query Performance and Scalability | L | Not Started |
+| PROD-008 | PLATFORM | Phase 6 | P1 | Add Observability, Auditability, and Reliability Operations | L | Not Started |
+| PROD-009 | QUALITY | Phase 6 | P1 | Establish Release, Backup, and Recovery Readiness | M | Not Started |
+| PROD-010 | PLATFORM | Phase 6 | P1 | Define Privacy, Retention, and Data Governance | M | Not Started |
+| ADV-001 | EXPENSE | Phase 7 | P0 | Support Manual and Flexible Expense Splits | M | Not Started |
+| ADV-002 | EXPENSE | Phase 7 | P1 | Add Expense Editing, Deletion, and Audit History | L | Not Started |
+| ADV-003 | EXPENSE | Phase 7 | P1 | Add Categories, Notes, Attachments, and Search | M | Not Started |
+| ADV-004 | EXPENSE | Phase 7 | P1 | Add Recurring Expenses and Scheduled Splits | L | Not Started |
+| ADV-005 | REPORTING | Phase 7 | P1 | Add Exports and Advanced Reports | M | Not Started |
+| ADV-006 | PLATFORM | Phase 7 | P1 | Add Multi-Currency and Localization Support | L | Not Started |
+| ADV-007 | PLATFORM | Phase 7 | P1 | Add Real-Time Updates and Conflict Handling | L | Not Started |
+| ADV-008 | PAYMENT | Phase 7 | P2 | Integrate External Payment Providers | L | Not Started |
+| ADV-009 | DASHBOARD | Phase 7 | P2 | Add Spending Analytics and Smarter Accountability | L | Not Started |
 
 ## Phase 1
 
@@ -896,6 +930,214 @@ Implement the user notification endpoints for listing notifications and marking 
 
 ---
 
+## Phase 5
+
+Phase 5 is a required stabilization phase before treating the MVP as production-ready. It addresses defects found by comparing the PRD, system design, API contract, database artifacts, and current frontend/backend implementation.
+
+### HARD-001: Reconcile Contract and Backlog Coverage
+
+- **Priority:** P0
+- **Status:** Not Started
+- **Scope:** Reconcile the API contract, PRD, schema, implementation, and backlog so every documented endpoint has an explicit delivery decision. Resolve the manual-split MVP mismatch and document overdue and reliability policies.
+- **Acceptance criteria:** `DELETE /groups/{groupId}` and `GET /groups/{groupId}/members` are implemented and tested or explicitly deferred everywhere; manual splits have one consistent scope; overdue threshold, due-date behavior, reliability thresholds, zero-history behavior, and score formula are documented; completed statuses are verified against source and test evidence.
+
+### HARD-002: Correct Schema Constraints, Indexes, and Views
+
+- **Priority:** P0
+- **Status:** Not Started
+- **Scope:** Make the SQL schema, Drizzle schema, migrations, and documented views mutually executable and consistent. Fix `NOT NULL` plus `ON DELETE SET NULL` contradictions and replace the unsupported payment index expression.
+- **Acceptance criteria:** User deletion behavior is explicitly selected and consistent; the payment lookup index is valid PostgreSQL and migrated where required; documented balance/outstanding views either exist and are tested or are removed; fresh migration and seed succeed.
+
+### HARD-003: Enforce Group-Isolated, Idempotent Settlement
+
+- **Priority:** P0
+- **Status:** Not Started
+- **Scope:** Correct settlement aggregation so it cannot include expenses from another group, and make repeated payment completion requests deterministic.
+- **Acceptance criteria:** Settlement queries constrain expenses, splits, and payments to the requested group; repeated completion does not duplicate history; payment and history writes are atomic; regression coverage includes a user in multiple groups.
+
+### HARD-004: Define and Materialize Payment Lifecycle
+
+- **Priority:** P0
+- **Status:** Not Started
+- **Scope:** Decide whether every expense split creates a pending payment and history record at expense creation, then apply the selected lifecycle consistently across balances, overdue queries, history, and reliability.
+- **Acceptance criteria:** Every split has a deterministic status from creation through completion; pending/completed/overdue semantics are documented; settled obligations are excluded correctly; expense creation and initial payment materialization are transactional.
+
+### HARD-005: Make Authentication Durable Across Reloads
+
+- **Priority:** P0
+- **Status:** Not Started
+- **Scope:** Restore authenticated sessions safely and clear credentials on logout. Initialize Axios authentication handling before protected data requests can run.
+- **Acceptance criteria:** A valid stored token hydrates the session and current user after reload; invalid tokens clear auth and route to login; logout removes the token and cached protected state; interceptors are ready before startup requests.
+
+### HARD-006: Protect Active Obligations During Member Changes
+
+- **Priority:** P0
+- **Status:** Not Started
+- **Scope:** Prevent member removal from silently orphaning expense splits, payments, and accountability records. Define behavior for members with open obligations.
+- **Acceptance criteria:** Removal is blocked for unsettled obligations or the documented settlement/archival policy is applied; historical records remain attributable; admin, self-removal, and non-admin rules are tested; the policy is reflected in the contract and UI.
+
+### HARD-007: Complete Group Delete and Member List Contract
+
+- **Priority:** P1
+- **Status:** Not Started
+- **Scope:** Close the contract gap for group deletion and the member list endpoint, including authorization, cascade behavior, and balance payloads.
+- **Acceptance criteria:** Both endpoints are registered, protected, and return documented payloads; deletion is admin-only and cascade behavior is verified; member listing is group-scoped and returns correct balances; frontend actions match the contract.
+
+### HARD-008: Remove Mock Fallbacks and Fix Live State Propagation
+
+- **Priority:** P1
+- **Status:** Not Started
+- **Scope:** Make live API responses the source of truth in authenticated screens. Remove silent mock fallback and ensure settlement, reminders, and post-mutation state reflect server data.
+- **Acceptance criteria:** Protected pages do not initialize from mock records; API failures show explicit loading/empty/error states; settlement renders authoritative balances for every member; reminders persist through the backend or are removed until persistence exists.
+
+### HARD-009: Add Regression Tests and Clean Verification Gates
+
+- **Priority:** P1
+- **Status:** Not Started
+- **Scope:** Add automated coverage and build checks for the high-risk contracts and known regressions before further feature expansion.
+- **Acceptance criteria:** Backend tests cover authorization, group isolation, idempotent payment completion, member removal, pagination, and cascades; frontend tests cover reload hydration, logout cleanup, live settlement, and API errors; migration/seed/build/lint/type checks are reproducible; the Dashboard utility warning is resolved or tracked.
+
+## Phase 6
+
+Phase 6 closes the product and operational gaps that prevent the MVP from being dependable for real users. It covers email delivery, durable alerts, form and API validation, user-facing failures, accessibility, security, performance, monitoring, recovery, and privacy.
+
+### PROD-001: Add Email Verification and Password Recovery
+
+- **Priority:** P0
+- **Status:** Not Started
+- **Scope:** Add verified email ownership, forgot-password requests, expiring reset tokens, password reset, and safe user-facing email flows.
+- **Acceptance criteria:** Signup can require email verification according to an agreed policy; reset tokens are single-use, hashed at rest, expiring, and never logged; reset responses do not reveal whether an email exists; expired and reused tokens return friendly errors; email delivery failures are observable and retryable.
+
+### PROD-002: Persist Invitations and Email Reminders
+
+- **Priority:** P0
+- **Status:** Not Started
+- **Scope:** Replace direct-only member addition and frontend-only reminders with invitation records, acceptance/decline flows, secure invite links, and opt-in email reminders for overdue balances.
+- **Acceptance criteria:** Invites can target registered or unregistered email addresses; invite tokens expire and cannot be reused; accepting an invite creates membership transactionally; duplicate, revoked, expired, and self-invites are handled clearly; reminders are persisted and rate-limited.
+
+### PROD-003: Add Notification Triggers, Preferences, and Delivery Status
+
+- **Priority:** P1
+- **Status:** Not Started
+- **Scope:** Generate in-app notifications from expense creation, payment changes, invitations, overdue detection, and reminders. Add per-user preferences and delivery status without exposing other users' notifications.
+- **Acceptance criteria:** Each trigger is idempotent; notification type and group context are preserved; users can mute categories or channels; unread counts remain correct; failed delivery is visible to operators and does not block financial transactions.
+
+### PROD-004: Standardize Validation and User-Friendly Error States
+
+- **Priority:** P0
+- **Status:** Not Started
+- **Scope:** Align client and server validation for UUIDs, amounts, decimal precision, dates, pagination, split membership, names, emails, and allowed state transitions. Standardize API errors and map them to actionable UI messages.
+- **Acceptance criteria:** Invalid, missing, empty, negative, oversized, duplicate, stale, and cross-group inputs are rejected consistently; errors use the documented status/code/message/timestamp shape; forms identify the affected field; network, timeout, conflict, forbidden, and server failures have recoverable UI states; technical details are not shown to users.
+
+### PROD-005: Complete Responsive and Accessible Workflows
+
+- **Priority:** P1
+- **Status:** Not Started
+- **Scope:** Audit all auth, group, expense, settlement, accountability, notification, and profile screens for mobile behavior, keyboard operation, focus management, contrast, semantics, and empty/loading/error states.
+- **Acceptance criteria:** Core flows work at mobile and desktop widths without clipped tables or overlapping controls; dialogs trap focus and close safely; forms have labels and accessible validation; status is not conveyed by color alone; screen-reader names, keyboard navigation, and reduced-motion behavior are covered by checks.
+
+### PROD-006: Harden Authentication and API Security
+
+- **Priority:** P0
+- **Status:** Not Started
+- **Scope:** Reduce token exposure and abuse risk and add defense-in-depth around authentication and protected resources.
+- **Acceptance criteria:** Token storage strategy is reviewed and an HttpOnly/SameSite approach is used where compatible; login/signup/reset endpoints have rate limits and brute-force protection; password policy and hashing parameters are documented; CORS, security headers, request size limits, UUID authorization, and sensitive-data redaction are enforced; secrets are environment-managed and never committed.
+
+### PROD-007: Improve Query Performance and Scalability
+
+- **Priority:** P1
+- **Status:** Not Started
+- **Scope:** Meet the documented dashboard and balance response targets as data grows through query plans, indexes, bounded queries, caching, and controlled concurrency.
+- **Acceptance criteria:** Dashboard responses meet the documented targets on a representative dataset; N+1 queries and unbounded result sets are removed; indexes match real filters and joins; expensive balance calculations have an explicit cache or aggregation strategy; connection-pool, timeout, and pagination limits are configured.
+
+### PROD-008: Add Observability, Auditability, and Reliability Operations
+
+- **Priority:** P1
+- **Status:** Not Started
+- **Scope:** Add structured logs, request correlation, metrics, health checks, error tracking, and an audit trail for security-sensitive and admin actions.
+- **Acceptance criteria:** Operators can trace a request without logging passwords or tokens; readiness and liveness checks cover API and database dependencies; failures expose actionable context; group deletion, membership, expense, payment, and role changes have actor/time/action records; alert thresholds and ownership are documented.
+
+### PROD-009: Establish Release, Backup, and Recovery Readiness
+
+- **Priority:** P1
+- **Status:** Not Started
+- **Scope:** Define environment configuration, migration rollout, rollback, backup, restore, disaster recovery, and deployment verification procedures.
+- **Acceptance criteria:** Development, test, and production configuration is separated; migrations are repeatable and reviewed; automated backups have retention and encryption; restore drills demonstrate recoverable data; deployment health checks and rollback steps are documented; CI runs typecheck, lint, tests, migration validation, and builds.
+
+### PROD-010: Define Privacy, Retention, and Data Governance
+
+- **Priority:** P1
+- **Status:** Not Started
+- **Scope:** Resolve the undocumented lifecycle of accounts, groups, payment history, notifications, invitations, and email delivery data.
+- **Acceptance criteria:** Data classification, retention, deletion/export behavior, account deactivation, group dissolution, and notification cleanup are documented; personal data access is limited by role; email preferences and consent are recorded; logs and backups follow the retention policy.
+
+## Phase 7
+
+Phase 7 contains advanced capabilities identified in the PRD, project brief, system design, and future-enhancement list. These should follow Phases 5 and 6 because they increase data, consistency, and operational complexity.
+
+### ADV-001: Support Manual and Flexible Expense Splits
+
+- **Priority:** P0
+- **Status:** Not Started
+- **Scope:** Implement manual amount, percentage, and selected-member splits with exact cent-level reconciliation.
+- **Acceptance criteria:** Split amounts equal the expense total exactly; duplicate members, non-members, zero/negative values, excessive precision, and missing participants are rejected; rounding is deterministic and visible; equal and manual modes share one validated contract.
+
+### ADV-002: Add Expense Editing, Deletion, and Audit History
+
+- **Priority:** P1
+- **Status:** Not Started
+- **Scope:** Add controlled expense update/delete workflows with rules for existing payments, recalculation, confirmation, and immutable audit history.
+- **Acceptance criteria:** Permissions are explicit; settled expenses cannot be changed silently; dependent payments and balances are recalculated transactionally; destructive actions require confirmation; users can see who changed what and when.
+
+### ADV-003: Add Categories, Notes, Attachments, and Search
+
+- **Priority:** P1
+- **Status:** Not Started
+- **Scope:** Improve expense context and retrieval with categories, notes, optional receipts, filters, and full-text search.
+- **Acceptance criteria:** File type/size/access checks protect receipts; search and filters are group-scoped and paginated; attachments are private by authorization; category changes do not alter financial calculations.
+
+### ADV-004: Add Recurring Expenses and Scheduled Splits
+
+- **Priority:** P1
+- **Status:** Not Started
+- **Scope:** Support recurring rent, utilities, subscriptions, and other predictable group expenses with schedule control and failure handling.
+- **Acceptance criteria:** Recurrence rules, timezone, start/end, pause, and next-run state are explicit; duplicate runs are prevented; generated expenses are traceable to a schedule; membership changes are handled before generating splits; failures are retried and surfaced.
+
+### ADV-005: Add Exports and Advanced Reports
+
+- **Priority:** P1
+- **Status:** Not Started
+- **Scope:** Export authorized expense, balance, settlement, and accountability data to CSV/PDF and provide date-range summaries.
+- **Acceptance criteria:** Exports are group-scoped, paginated or streamed, and authorization-checked; totals reconcile with the dashboard; large exports do not block request workers; generated files expire and are protected.
+
+### ADV-006: Add Multi-Currency and Localization Support
+
+- **Priority:** P1
+- **Status:** Not Started
+- **Scope:** Add group currency, locale-aware formatting, timezone handling, and an explicit exchange-rate policy.
+- **Acceptance criteria:** Currency is stored with financial records; no floating-point arithmetic changes totals; rates and conversion timestamps are auditable; users see consistent date/number formats; mixed-currency expenses are either supported explicitly or rejected clearly.
+
+### ADV-007: Add Real-Time Updates and Conflict Handling
+
+- **Priority:** P1
+- **Status:** Not Started
+- **Scope:** Synchronize group activity, balances, payments, and notifications through WebSocket or server-sent events with reconnect and stale-state handling.
+- **Acceptance criteria:** Authorized clients receive only group-appropriate events; reconnects do not duplicate updates; optimistic changes reconcile with server truth; versioning or conflict rules prevent lost updates; polling remains a fallback.
+
+### ADV-008: Integrate External Payment Providers
+
+- **Priority:** P2
+- **Status:** Not Started
+- **Scope:** Evaluate and optionally integrate GCash, Stripe, PayPal, or another provider for payment initiation and verified webhooks.
+- **Acceptance criteria:** Provider selection, fees, supported countries/currencies, refund behavior, and compliance responsibilities are documented; webhook signatures and idempotency are enforced; the app never stores raw payment credentials; provider state cannot bypass internal authorization.
+
+### ADV-009: Add Spending Analytics and Smarter Accountability
+
+- **Priority:** P2
+- **Status:** Not Started
+- **Scope:** Add category/time/member trends, settlement completion metrics, configurable reliability policies, and explainable accountability insights.
+- **Acceptance criteria:** Analytics are group-scoped and privacy-aware; reliability calculations are explainable and not presented as credit scores; small-sample and no-history states are neutral; metrics have documented definitions and aggregation windows; ML predictions remain opt-in and out of financial decision automation.
+
 ## Dependency Graph
 
 ```text
@@ -935,6 +1177,76 @@ ACC-002
 
 DASH-001
     └──> UI polish and validation hardening
+
+Phase 5 hardening dependencies:
+
+HARD-001
+    ├──> HARD-002
+    ├──> HARD-004
+    └──> HARD-007
+
+HARD-003
+    └──> HARD-009
+
+HARD-004
+    ├──> HARD-003
+    └──> HARD-009
+
+HARD-005
+    └──> HARD-009
+
+HARD-006
+    └──> HARD-009
+
+HARD-007
+    └──> HARD-008
+
+HARD-008
+    └──> HARD-009
+
+Phase 6 and Phase 7 dependencies:
+
+HARD-001
+    └──> PROD-004
+
+HARD-004
+    └──> PROD-003
+
+HARD-005
+    └──> PROD-006
+
+HARD-009
+    ├──> PROD-001
+    ├──> PROD-004
+    ├──> PROD-005
+    └──> PROD-009
+
+PROD-001
+    └──> PROD-002
+
+PROD-002
+    └──> PROD-003
+
+PROD-004
+    ├──> ADV-001
+    └──> ADV-002
+
+PROD-006
+    ├──> PROD-008
+    └──> ADV-008
+
+PROD-007
+    └──> ADV-005
+
+PROD-009
+    └──> ADV-004
+
+ADV-001
+    ├──> ADV-002
+    └──> ADV-004
+
+ADV-002
+    └──> ADV-005
 ```
 
 ## Recommended Implementation Order
@@ -956,12 +1268,56 @@ DASH-001
 - ACC-003
 - DASH-001
 - NOTIF-001
+- HARD-001
+- HARD-002
+- HARD-003
+- HARD-004
+- HARD-005
+- HARD-006
+- HARD-007
+- HARD-008
+- HARD-009
+- PROD-001
+- PROD-002
+- PROD-004
+- PROD-005
+- PROD-006
+- PROD-009
+- PROD-003
+- PROD-007
+- PROD-008
+- PROD-010
+- ADV-001
+- ADV-002
+- ADV-003
+- ADV-004
+- ADV-005
+- ADV-006
+- ADV-007
+- ADV-008
+- ADV-009
 
 ## Risks & Missing Requirements
 
 - Manual expense split assignment is explicitly out of MVP scope; the implementation should not add custom split logic unless a later requirement changes the project scope.
 - Real-time updates are explicitly listed as future work and should not be assumed as a required MVP feature.
 - Automated reminder scheduling is documented as a future enhancement; the current notification story only covers retrieval and read-state tracking.
+- Reminder controls currently update frontend-only state; they are not durable notifications until a persistence flow is implemented.
+- The frontend retains mock-state initialization and silent fallbacks in several authenticated paths; this must not be treated as production data.
+- The API contract documents group deletion and member listing, but the original backlog did not track them as stories.
+- Payment settlement has correctness risks around cross-group aggregation, repeated completion requests, and delayed creation of pending payment rows.
+- Schema artifacts disagree on foreign-key deletion behavior, payment indexes, and documented views; migrations must be the executable source of truth.
+- Authentication requires session hydration and logout cleanup to be reliable across browser reloads.
+- The PRD's "real-time" value proposition conflicts with its future-scope classification; the product must define whether polling is sufficient for MVP.
+- The PRD and API contract describe invitations, but the current member endpoint models direct addition and has no invitation lifecycle.
+- No email provider, template system, verification flow, password recovery flow, consent model, or delivery retry policy is defined.
+- Notification types exist in the schema, but durable trigger generation, user preferences, delivery channels, deduplication, and delivery status are incomplete.
+- API error envelopes and frontend error states need a single contract; raw database/network errors must not reach users.
+- Input limits, decimal/date/timezone rules, stale updates, idempotency keys, and edge cases for empty groups and one-person splits need explicit policy.
+- JWT in browser storage, absent rate limiting, missing security headers, and undefined secret/rotation policy are security risks requiring a threat-model review.
+- Dashboard performance targets lack dataset-size assumptions, query-plan evidence, caching strategy, and operational monitoring.
+- Backup, restore, uptime, incident response, audit logging, privacy, retention, and account deletion policies are not defined.
+- Advanced features must not be implemented before financial invariants, authorization, and migration safety are tested.
 - The API contract contains some abbreviated examples and not every field shape is fully expanded in the summary; implementation should validate against the current backend and frontend contracts in use before finalizing payload handling.
 - The source document uses DATABASE_SCHEMA.sql rather than DATABASE_SCHEMA.md; the SQL schema remains the authoritative schema artifact for this project.
 
@@ -987,3 +1343,5 @@ DASH-001
 | 1.15 | 2026-09-17 | ACC-003 (Get Member Reliability Indicator) completed: unified reliability computation by replacing the crude getMemberReliability with getMemberReliabilityMetrics (expense_splits joined to expenses/users with LEFT JOIN payments, counting completedOnTime/completedLate via paidAt vs created_at 7-day threshold, stillPending, and rounded completionRate) plus a shared pure deriveReliabilityIndicator (0 payments or rate >= 90 => Reliable, >= 50 => At Risk, else Unreliable) also applied to ACC-001's history response; added GetMemberReliabilityResult/ReliabilityMetrics types, service getMemberReliability with 404 group/member and member-only 403 authorization, controller, and protected GET /groups/:groupId/members/:userId/reliability; frontend getMemberReliability service added and MemberAccountabilityModal now fetches the live reliability indicator/score/metrics for the badge and score card with reliabilityScores slice data retained as fallback. |
 | 1.16 | 2026-09-18 | DASH-001 (Get Group Dashboard) completed: added DashboardMemberBalance/DashboardRecentExpense/DashboardOverdueAlert/GetGroupDashboardResult types, dashboard repository getDashboardOverview (expense COUNT + SUM with last-5 recent expenses joined to users for creator names), service getGroupDashboard with 404 group/member-only 403 authorization aggregating group meta (name, admin, memberCount) with reused settlement balances (payment.repository getGroupSettlementStatus), unified reliability indicators (new grouped getReliabilityMetricsForGroup + deriveReliabilityIndicator), and AC C-002 overdue alerts (reused getOverdueBalancesForGroup at 7 days, oldestOverdue = oldest overdue split date), controller, and protected GET /groups/:groupId/dashboard; frontend dashboard types/service/slice added and DashboardPage now fetches live dashboard data on group change for the metric cards, recent expense feed, overdue banner, and member balances (with reliability badges) while retaining the existing store/local computation as fallback. |
 | 1.17 | 2026-09-18 | NOTIF-001 (Manage User Notifications) completed: added NotificationItem/ListNotificationsResult/MarkNotificationReadResult types, notification repository (listForUser joining notifications to groups for groupName with total + unreadCount and optional read filter, markAsRead scoped to the owner user), service with login-scoped access and 404 for missing/foreign notifications (server-computed updatedAt since the notifications table has no updated_at column per the authoritative SQL schema), controller, and protected GET /notifications with limit/offset/read query validation (defaults 20/0) plus PATCH /notifications/:notificationId requiring read=true; router mounted at /notifications; frontend notification types/service/slice (setNotifications) added and MainLayout notification bell now fetches live notifications on mount and marks individual/all notifications read through the real API with the existing store mock retained as fallback. |
+| 1.18 | 2026-09-21 | Added Phase 5: Reconciliation & Production Hardening for contract/schema gaps, settlement and payment correctness bugs, durable authentication, member-removal safety, missing group endpoints, mock-state removal, and regression verification. |
+| 1.19 | 2026-09-21 | Added Phase 6: Product Completeness & Operational Readiness for email, invitations, durable notifications, validation, error UX, accessibility, security, performance, observability, recovery, privacy, and release operations; added Phase 7: Advanced Collaboration & Intelligence for flexible splits, expense lifecycle, recurring expenses, exports, currencies, real-time updates, payment integrations, and analytics. |
