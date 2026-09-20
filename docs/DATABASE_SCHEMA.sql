@@ -38,11 +38,12 @@ COMMENT ON COLUMN users.name IS 'User display name';
 -- TABLE 2: GROUPS
 -- Purpose: Store expense groups
 -- =====================================================================
+-- Nullable + ON DELETE SET NULL: if the admin user is deleted, the group is preserved with a NULL admin
 CREATE TABLE IF NOT EXISTS groups (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL,
   description TEXT,
-  admin_id UUID NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+  admin_id UUID REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   
@@ -83,12 +84,13 @@ COMMENT ON COLUMN group_members.role IS 'admin or member role within the group';
 -- TABLE 4: EXPENSES
 -- Purpose: Store shared expenses
 -- =====================================================================
+-- Nullable + ON DELETE SET NULL: if the recording user is deleted, the expense is preserved with a NULL created_by
 CREATE TABLE IF NOT EXISTS expenses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
   description VARCHAR(255) NOT NULL,
   amount DECIMAL(12, 2) NOT NULL CHECK (amount > 0),
-  created_by UUID NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+  created_by UUID REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   
   CONSTRAINT chk_description_not_empty CHECK (LENGTH(TRIM(description)) > 0),
@@ -257,7 +259,8 @@ CREATE INDEX IF NOT EXISTS idx_groups_by_member ON group_members (user_id, group
 CREATE INDEX IF NOT EXISTS idx_expenses_by_group_date ON expenses (group_id, created_at DESC);
 
 -- Index for finding member payments
-CREATE INDEX IF NOT EXISTS idx_payments_by_user_group ON payments (user_id, (SELECT group_id FROM expenses WHERE id = payments.expense_id));
+-- (Subquery expressions are not allowed in PostgreSQL index columns; the valid lookup index is over the direct payment columns.)
+CREATE INDEX IF NOT EXISTS idx_payments_user_expense ON payments (user_id, expense_id);
 
 -- =====================================================================
 -- FOREIGN KEY RELATIONSHIPS SUMMARY
@@ -383,6 +386,7 @@ IMPLEMENTATION NOTES:
 3. Cascading Deletes
    - ON DELETE CASCADE used for child tables to maintain referential integrity
    - ON DELETE SET NULL used for admin_id in groups to preserve group on admin deletion
+   - groups.admin_id and expenses.created_by are NULLABLE (no NOT NULL constraint) so ON DELETE SET NULL can take effect: deleting a user preserves their groups/expenses with a NULL admin_id/created_by
 
 4. Indexes
    - Indexes created on frequently queried columns for performance

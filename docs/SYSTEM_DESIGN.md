@@ -1053,7 +1053,7 @@ CREATE TABLE groups (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL,
   description TEXT,
-  admin_id UUID NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+  admin_id UUID REFERENCES users(id) ON DELETE SET NULL,  -- nullable so SET NULL can preserve the group on admin deletion
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   
@@ -1113,7 +1113,7 @@ CREATE TABLE expenses (
   group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
   description VARCHAR(255) NOT NULL,
   amount DECIMAL(12, 2) NOT NULL CHECK (amount > 0),
-  created_by UUID NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+  created_by UUID REFERENCES users(id) ON DELETE SET NULL,  -- nullable so SET NULL can preserve the expense on user deletion
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   
   INDEX idx_expenses_group_id (group_id),
@@ -1180,6 +1180,7 @@ CREATE TABLE payments (
   UNIQUE(expense_id, user_id),
   INDEX idx_payments_expense_id (expense_id),
   INDEX idx_payments_user_id (user_id),
+  INDEX idx_payments_user_expense (user_id, expense_id),
   INDEX idx_payments_status (status),
   INDEX idx_payments_created_at (created_at)
 );

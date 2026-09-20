@@ -55,7 +55,7 @@ This project delivers a group expense management system for friends, roommates, 
 | DASH-001 | DASHBOARD | Phase 4 | P0 | Get Group Dashboard | M | Done |
 | NOTIF-001 | NOTIFICATION | Phase 4 | P1 | Manage User Notifications | M | Done |
 | HARD-001 | PLATFORM | Phase 5 | P0 | Reconcile Contract and Backlog Coverage | M | Done |
-| HARD-002 | DATA | Phase 5 | P0 | Correct Schema Constraints, Indexes, and Views | M | Not Started |
+| HARD-002 | DATA | Phase 5 | P0 | Correct Schema Constraints, Indexes, and Views | M | Done |
 | HARD-003 | PAYMENT | Phase 5 | P0 | Enforce Group-Isolated, Idempotent Settlement | L | Not Started |
 | HARD-004 | PAYMENT | Phase 5 | P0 | Define and Materialize Payment Lifecycle | M | Not Started |
 | HARD-005 | AUTH | Phase 5 | P0 | Make Authentication Durable Across Reloads | M | Not Started |
@@ -945,9 +945,10 @@ Phase 5 is a required stabilization phase before treating the MVP as production-
 ### HARD-002: Correct Schema Constraints, Indexes, and Views
 
 - **Priority:** P0
-- **Status:** Not Started
+- **Status:** Done (2026-09-21)
 - **Scope:** Make the SQL schema, Drizzle schema, migrations, and documented views mutually executable and consistent. Fix `NOT NULL` plus `ON DELETE SET NULL` contradictions and replace the unsupported payment index expression.
 - **Acceptance criteria:** User deletion behavior is explicitly selected and consistent; the payment lookup index is valid PostgreSQL and migrated where required; documented balance/outstanding views either exist and are tested or are removed; fresh migration and seed succeed.
+- **Resolution:** User deletion behavior is pinned to **NULLable + `ON DELETE SET NULL`**: `groups.admin_id` and `expenses.created_by` are nullable (no `NOT NULL`) so deleting a user preserves their groups/expenses with a `NULL` admin/creator; no user-deletion endpoint exists so no runtime NULL values occur. The invalid documented index `idx_payments_by_user_group` (subquery in an index expression, which PostgreSQL rejects) is replaced by the migrated `idx_payments_user_expense (user_id, expense_id)` in `schema.ts`, the SQL DDL, and the design doc. The documented `user_balances_per_group` and `outstanding_balances` views are now managed Drizzle views (`pgView`) and created by migration `0002_late_lilith.sql`; both were smoke-tested against seeded data and return rows. The database was re-provisioned cleanly so the full history `0000_rich_boomerang` → `0001_zippy_baron_strucker` → `0002_late_lilith` applies, then `db:seed` was run (6 users, 3 groups, 5 expenses, 19 splits); `npm run build` (strict TS) passes. DDL and docs updated accordingly.
 
 ### HARD-003: Enforce Group-Isolated, Idempotent Settlement
 

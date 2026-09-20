@@ -140,7 +140,7 @@ backend/
 
 The Drizzle model includes the eight tables defined by `docs/DATABASE_SCHEMA.sql`: users, groups, group members, expenses, expense splits, payments, payment history, and notifications. Database column names remain snake_case while TypeScript properties use camelCase. Foreign keys, uniqueness rules, checks, and declared indexes are represented in `src/models/schema.ts`.
 
-The source SQL also contains two views and one index expression that uses a subquery. The table model is ready for Drizzle migrations; the subquery-based index is not emitted because PostgreSQL does not permit subqueries in index expressions. The views remain available through the source SQL until they are introduced as explicitly managed database views.
+The source SQL also contains two views, `user_balances_per_group` and `outstanding_balances`, which are managed by Drizzle as regular (non-materialized) views in `src/models/schema.ts` and are created as part of the migration history. The source SQL's original subquery-based payment index is not valid PostgreSQL and has been replaced in both the model and the DDL with a plain composite index, `idx_payments_user_expense (user_id, expense_id)`.
 
 ## Next Development Phase
 

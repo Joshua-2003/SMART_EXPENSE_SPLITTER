@@ -5,6 +5,7 @@ import {
   decimal,
   index,
   pgTable,
+  pgView,
   text,
   timestamp,
   unique,
@@ -37,9 +38,7 @@ export const groups = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     name: varchar('name', { length: 255 }).notNull(),
     description: text('description'),
-    adminId: uuid('admin_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'set null' }),
+    adminId: uuid('admin_id').references(() => users.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
@@ -81,9 +80,7 @@ export const expenses = pgTable(
       .references(() => groups.id, { onDelete: 'cascade' }),
     description: varchar('description', { length: 255 }).notNull(),
     amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
-    createdBy: uuid('created_by')
-      .notNull()
-      .references(() => users.id, { onDelete: 'set null' }),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [
@@ -136,6 +133,7 @@ export const payments = pgTable(
     unique('payments_expense_id_user_id_unique').on(table.expenseId, table.userId),
     index('idx_payments_expense_id').on(table.expenseId),
     index('idx_payments_user_id').on(table.userId),
+    index('idx_payments_user_expense').on(table.userId, table.expenseId),
     index('idx_payments_status').on(table.status),
     index('idx_payments_created_at').on(table.createdAt),
     check('chk_payments_status_valid', sql`${table.status} IN ('pending', 'completed')`),
@@ -193,6 +191,55 @@ export const notifications = pgTable(
     check('chk_notifications_message_not_empty', sql`LENGTH(TRIM(${table.message})) > 0`),
   ],
 );
+
+export const userBalancesPerGroup = pgView('user_balances_per_group', {
+  userId: uuid('user_id'),
+  groupId: uuid('group_id'),
+  name: varchar('name', { length: 255 }),
+  totalOwes: decimal('total_owes', { precision: 12, scale: 2 }),
+  amountCreatedForOthers: decimal('amount_created_for_others', { precision: 12, scale: 2 }),
+  netBalance: decimal('net_balance', { precision: 12, scale: 2 }),
+}).as(sql`
+  SELECT
+    u.id as user_id,
+    g.id as group_id,
+    u.name,
+    COALESCE(SUM(CASE WHEN es.user_id = u.id THEN es.assigned_amount ELSE 0 END), 0) as total_owes,
+    COALESCE(SUM(CASE WHEN e.created_by = u.id AND es.user_id != u.id THEN es.assigned_amount ELSE 0 END), 0) as amount_created_for_others,
+    (COALESCE(SUM(CASE WHEN es.user_id = u.id THEN es.assigned_amount ELSE 0 END), 0) - COALESCE(SUM(CASE WHEN e.created_by = u.id AND es.user_id != u.id THEN es.assigned_amount ELSE 0 END), 0)) as net_balance
+  FROM users u
+  CROSS JOIN groups g
+  LEFT JOIN group_members gm ON gm.group_id = g.id AND gm.user_id = u.id
+  LEFT JOIN expenses e ON e.group_id = g.id
+  LEFT JOIN expense_splits es ON es.expense_id = e.id
+  WHERE gm.user_id IS NOT NULL
+  GROUP BY u.id, g.id, u.name
+`);
+
+export const outstandingBalances = pgView('outstanding_balances', {
+  userId: uuid('user_id'),
+  expenseId: uuid('expense_id'),
+  groupId: uuid('group_id'),
+  name: varchar('name', { length: 255 }),
+  assignedAmount: decimal('assigned_amount', { precision: 12, scale: 2 }),
+  description: varchar('description', { length: 255 }),
+  createdAt: timestamp('created_at'),
+}).as(sql`
+  SELECT
+    p.user_id,
+    p.expense_id,
+    g.id as group_id,
+    u.name,
+    es.assigned_amount,
+    e.description,
+    e.created_at
+  FROM payments p
+  JOIN expense_splits es ON p.expense_id = es.expense_id AND p.user_id = es.user_id
+  JOIN expenses e ON p.expense_id = e.id
+  JOIN groups g ON e.group_id = g.id
+  JOIN users u ON p.user_id = u.id
+  WHERE p.status = 'pending'
+`);
 
 export const usersRelations = relations(users, ({ many }) => ({
   groups: many(groups),

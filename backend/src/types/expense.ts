@@ -25,7 +25,7 @@ export interface CreateExpenseResult {
   groupId: string;
   description: string;
   amount: string;
-  createdBy: string;
+  createdBy: string | null;
   createdAt: Date;
   splits: ExpenseSplitResult[];
 }
@@ -47,7 +47,7 @@ export interface ExpenseListItem {
   expenseId: string;
   description: string;
   amount: string;
-  createdBy: string;
+  createdBy: string | null;
   createdByName: string;
   createdAt: Date;
   splits: ExpenseSplitListItem[];
@@ -73,7 +73,7 @@ export interface ExpenseDetailResult {
   groupId: string;
   description: string;
   amount: string;
-  createdBy: string;
+  createdBy: string | null;
   createdByName: string;
   createdAt: Date;
   splits: ExpenseSplitDetail[];

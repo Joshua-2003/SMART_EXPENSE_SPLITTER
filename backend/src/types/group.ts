@@ -7,7 +7,7 @@ export interface CreateGroupResult {
   groupId: string;
   name: string;
   description: string | null;
-  adminId: string;
+  adminId: string | null;
   createdAt: Date;
 }
 
@@ -20,7 +20,7 @@ export interface GroupListItem {
   groupId: string;
   name: string;
   description: string | null;
-  adminId: string;
+  adminId: string | null;
   role: 'admin' | 'member';
   memberCount: number;
   createdAt: Date;
@@ -45,7 +45,7 @@ export interface GroupDetailsResult {
   groupId: string;
   name: string;
   description: string | null;
-  adminId: string;
+  adminId: string | null;
   members: GroupMemberItem[];
   createdAt: Date;
 }
