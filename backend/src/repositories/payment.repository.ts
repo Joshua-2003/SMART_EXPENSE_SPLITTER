@@ -141,6 +141,7 @@ export async function getGroupSettlementStatus(
       pendingPayments: sql<number>`COUNT(
         CASE
           WHEN ${expenseSplits.userId} = ${users.id}
+            AND ${expenses.id} IS NOT NULL
             AND (${payments.status} IS NULL OR ${payments.status} = 'pending')
           THEN 1
         END
@@ -148,6 +149,7 @@ export async function getGroupSettlementStatus(
       completedPayments: sql<number>`COUNT(
         CASE
           WHEN ${expenseSplits.userId} = ${users.id}
+            AND ${expenses.id} IS NOT NULL
             AND ${payments.status} = 'completed'
           THEN 1
         END
@@ -156,7 +158,10 @@ export async function getGroupSettlementStatus(
     .from(groupMembers)
     .innerJoin(users, eq(users.id, groupMembers.userId))
     .leftJoin(expenseSplits, eq(expenseSplits.userId, users.id))
-    .leftJoin(expenses, eq(expenses.id, expenseSplits.expenseId))
+    .leftJoin(
+      expenses,
+      and(eq(expenses.id, expenseSplits.expenseId), eq(expenses.groupId, groupId)),
+    )
     .leftJoin(
       payments,
       and(eq(payments.expenseId, expenseSplits.expenseId), eq(payments.userId, expenseSplits.userId)),
@@ -189,10 +194,25 @@ export async function markPaymentCompleted(
 
   return db.transaction(async (tx) => {
     const [existing] = await tx
-      .select({ id: payments.id })
+      .select({
+        id: payments.id,
+        status: payments.status,
+        paidAt: payments.paidAt,
+      })
       .from(payments)
       .where(and(eq(payments.expenseId, expenseId), eq(payments.userId, userId)))
       .limit(1);
+
+    if (existing && existing.status === 'completed' && existing.paidAt) {
+      return {
+        splitId,
+        expenseId,
+        userId,
+        assignedAmount,
+        status: 'completed',
+        paidAt: existing.paidAt.toISOString(),
+      };
+    }
 
     let paymentId: string;
 

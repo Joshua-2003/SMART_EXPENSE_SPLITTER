@@ -56,7 +56,7 @@ This project delivers a group expense management system for friends, roommates, 
 | NOTIF-001 | NOTIFICATION | Phase 4 | P1 | Manage User Notifications | M | Done |
 | HARD-001 | PLATFORM | Phase 5 | P0 | Reconcile Contract and Backlog Coverage | M | Done |
 | HARD-002 | DATA | Phase 5 | P0 | Correct Schema Constraints, Indexes, and Views | M | Done |
-| HARD-003 | PAYMENT | Phase 5 | P0 | Enforce Group-Isolated, Idempotent Settlement | L | Not Started |
+| HARD-003 | PAYMENT | Phase 5 | P0 | Enforce Group-Isolated, Idempotent Settlement | L | Done |
 | HARD-004 | PAYMENT | Phase 5 | P0 | Define and Materialize Payment Lifecycle | M | Not Started |
 | HARD-005 | AUTH | Phase 5 | P0 | Make Authentication Durable Across Reloads | M | Not Started |
 | HARD-006 | GROUP | Phase 5 | P0 | Protect Active Obligations During Member Changes | M | Not Started |
@@ -953,9 +953,10 @@ Phase 5 is a required stabilization phase before treating the MVP as production-
 ### HARD-003: Enforce Group-Isolated, Idempotent Settlement
 
 - **Priority:** P0
-- **Status:** Not Started
+- **Status:** Done (2026-09-21)
 - **Scope:** Correct settlement aggregation so it cannot include expenses from another group, and make repeated payment completion requests deterministic.
 - **Acceptance criteria:** Settlement queries constrain expenses, splits, and payments to the requested group; repeated completion does not duplicate history; payment and history writes are atomic; regression coverage includes a user in multiple groups.
+- **Resolution:** `getGroupSettlementStatus` (in `backend/src/repositories/payment.repository.ts`) now constrains the `expenses` join to the requested group (`expenses.id = expense_splits.expense_id AND expenses.group_id = groupId`) and guards the `pendingPayments`/`completedPayments` counts with `expenses.id IS NOT NULL`, so splits, expenses, and payments from other groups cannot leak into a group's settlement; members with no splits still appear via the left-join semantics. `markPaymentCompleted` is now idempotent: an already-completed payment returns the existing `paidAt` without writing anything, and a `payment_history` row is inserted only on an actual transition (absent or pending → completed), all within the existing atomic transaction. Verified against the seeded database (users in multiple groups — Alex in Baguio/Apartment/Gala, Jordan/Casey/Mia/David in two): Baguio settlement returns only Baguio splits (Alex `completed=3/pending=0`, not `4/1`; David `pending=3`; `totalGroupExpenses=8750`; Apartment settlement stays independent at `2250`), and repeated completion produces exactly one history row with a stable `paidAt` on both the no-op and transition paths. `npm run build` (strict TS) passes. The automated regression harness for these scenarios is owned by HARD-009 (dependency graph: HARD-003 → HARD-009).
 
 ### HARD-004: Define and Materialize Payment Lifecycle
 
