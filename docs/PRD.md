@@ -129,7 +129,7 @@ Unlike basic bill-splitting tools, Smart Expense Splitter adds **accountability 
 |---------|-------------|----------|
 | **Create and Join Groups** | Users create new expense groups or join existing ones via invitation | Core |
 | **Add Shared Expenses** | Record expenses with description, amount, and date | Core |
-| **Split Expenses** | Automatic equal splits or manual assignment of amounts per member | Core |
+| **Split Expenses** | Automatic equal splits in MVP (see §7.1); manual assignment of amounts per member is post-MVP (tracked as ADV-001, Phase 7) | Core |
 | **View Personal Balance** | Display owed amounts vs. amounts to receive | Core |
 | **Mark Payments as Completed** | Record when payments have been settled | Core |
 

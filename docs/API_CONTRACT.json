@@ -284,6 +284,11 @@
       "path": "/groups/{groupId}",
       "summary": "Delete a group and all associated data (admin only)",
       "authentication": true,
+      "delivery": {
+        "status": "DEFERRED",
+        "trackedBy": "HARD-007",
+        "note": "Endpoint is MVP contract scope; implementation is explicitly deferred to HARD-007 (Phase 5). Not registered today."
+      },
       "pathParameters": {
         "groupId": { "type": "UUID", "required": true }
       },
@@ -349,6 +354,11 @@
       "path": "/groups/{groupId}/members",
       "summary": "Get all members of a group with current balances",
       "authentication": true,
+      "delivery": {
+        "status": "DEFERRED",
+        "trackedBy": "HARD-007",
+        "note": "Endpoint is MVP contract scope; implementation is explicitly deferred to HARD-007 (Phase 5). Not registered today."
+      },
       "pathParameters": {
         "groupId": { "type": "UUID", "required": true }
       },
@@ -377,6 +387,10 @@
       "path": "/groups/{groupId}/expenses",
       "summary": "Create a new shared expense and calculate splits",
       "authentication": true,
+      "mvpScope": {
+        "splitTypes": ["equal"],
+        "note": "MVP supports equal splitting only; splitType 'manual' and memberSplits amounts are post-MVP and deferred to ADV-001 (Phase 7). The backend rejects 'manual' with a 400 VALIDATION_ERROR."
+      },
       "pathParameters": {
         "groupId": { "type": "UUID", "required": true }
       },
@@ -794,11 +808,11 @@
     }
   ],
   "summary": {
-    "totalEndpoints": 30,
-    "mvpEndpoints": 30,
+    "totalEndpoints": 25,
+    "mvpEndpoints": 24,
     "futureEndpoints": 0,
     "categories": {
-      "authentication": 2,
+      "authentication": 3,
       "userManagement": 2,
       "groupManagement": 5,
       "memberManagement": 3,

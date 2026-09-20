@@ -54,7 +54,7 @@ This project delivers a group expense management system for friends, roommates, 
 | ACC-003 | ACCOUNTABILITY | Phase 3 | P1 | Get Member Reliability Indicator | M | Done |
 | DASH-001 | DASHBOARD | Phase 4 | P0 | Get Group Dashboard | M | Done |
 | NOTIF-001 | NOTIFICATION | Phase 4 | P1 | Manage User Notifications | M | Done |
-| HARD-001 | PLATFORM | Phase 5 | P0 | Reconcile Contract and Backlog Coverage | M | Not Started |
+| HARD-001 | PLATFORM | Phase 5 | P0 | Reconcile Contract and Backlog Coverage | M | Done |
 | HARD-002 | DATA | Phase 5 | P0 | Correct Schema Constraints, Indexes, and Views | M | Not Started |
 | HARD-003 | PAYMENT | Phase 5 | P0 | Enforce Group-Isolated, Idempotent Settlement | L | Not Started |
 | HARD-004 | PAYMENT | Phase 5 | P0 | Define and Materialize Payment Lifecycle | M | Not Started |
@@ -937,9 +937,10 @@ Phase 5 is a required stabilization phase before treating the MVP as production-
 ### HARD-001: Reconcile Contract and Backlog Coverage
 
 - **Priority:** P0
-- **Status:** Not Started
+- **Status:** Done (2026-09-21)
 - **Scope:** Reconcile the API contract, PRD, schema, implementation, and backlog so every documented endpoint has an explicit delivery decision. Resolve the manual-split MVP mismatch and document overdue and reliability policies.
 - **Acceptance criteria:** `DELETE /groups/{groupId}` and `GET /groups/{groupId}/members` are implemented and tested or explicitly deferred everywhere; manual splits have one consistent scope; overdue threshold, due-date behavior, reliability thresholds, zero-history behavior, and score formula are documented; completed statuses are verified against source and test evidence.
+- **Resolution:** See `docs/RECONCILIATION.md` for the endpoint delivery matrix and decision records. `DELETE /groups/{groupId}` and `GET /groups/{groupId}/members` are explicitly deferred to HARD-007; manual splits are resolved to equal-only MVP (backend already rejects `manual`) with delivery tracked by ADV-001; overdue (7-day threshold, due-date from expense `created_at`) and reliability (90/50 thresholds, zero-history = Reliable, score = completionRate) policies are documented; completed statuses are verified against `payments`/`payment_history` source and the automated test-evidence gap is tracked by HARD-009.
 
 ### HARD-002: Correct Schema Constraints, Indexes, and Views
 
@@ -1299,12 +1300,13 @@ ADV-002
 
 ## Risks & Missing Requirements
 
-- Manual expense split assignment is explicitly out of MVP scope; the implementation should not add custom split logic unless a later requirement changes the project scope.
+- Manual expense split assignment is explicitly out of MVP scope; the implementation should not add custom split logic unless a later requirement changes the project scope. HARD-001 reconciled this as equal-only MVP and annotated the contract, PRD, and system design accordingly; manual splitting is tracked as ADV-001.
 - Real-time updates are explicitly listed as future work and should not be assumed as a required MVP feature.
 - Automated reminder scheduling is documented as a future enhancement; the current notification story only covers retrieval and read-state tracking.
 - Reminder controls currently update frontend-only state; they are not durable notifications until a persistence flow is implemented.
 - The frontend retains mock-state initialization and silent fallbacks in several authenticated paths; this must not be treated as production data.
-- The API contract documents group deletion and member listing, but the original backlog did not track them as stories.
+- The API contract documents group deletion and member listing, but the original backlog did not track them as stories. HARD-001 resolved this with an explicit deferral to HARD-007, recorded in docs/RECONCILIATION.md and annotated in the contract.
+- Overdue threshold, due-date behavior, reliability thresholds, zero-history behavior, and the reliability score formula are now documented as canonical policy in docs/RECONCILIATION.md (HARD-001).
 - Payment settlement has correctness risks around cross-group aggregation, repeated completion requests, and delayed creation of pending payment rows.
 - Schema artifacts disagree on foreign-key deletion behavior, payment indexes, and documented views; migrations must be the executable source of truth.
 - Authentication requires session hydration and logout cleanup to be reliable across browser reloads.

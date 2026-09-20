@@ -512,6 +512,10 @@ POST /api/groups/{groupId}/expenses
 
 Purpose: Create a new shared expense and calculate splits
 
+> MVP SCOPE NOTE: The MVP supports equal splitting only. `splitType: "manual"`
+> and per-member `memberSplits` amounts are post-MVP (deferred to ADV-001,
+> Phase 7). See docs/RECONCILIATION.md (decision D2).
+
 Headers: 
   Authorization: "Bearer {JWT token}"
 
@@ -1438,7 +1442,7 @@ AND e.group_id = $groupId;
 
 **Key Services**:
 - `ExpenseService`: Create, read expenses
-- `SplitCalculator`: Calculate equal or manual splits
+- `SplitCalculator`: Calculate equal or manual splits (**MVP: equal only**; manual is post-MVP, tracked as ADV-001)
 - `ExpenseValidator`: Validate expense input
 
 **Database Interactions**:
