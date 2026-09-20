@@ -248,13 +248,31 @@ export async function markPaymentCompleted(
       paymentId = created.id;
     }
 
-    await tx.insert(paymentHistory).values({
-      userId,
-      groupId,
-      paymentId,
-      status: 'completed',
-      completedAt: paidAt,
-    });
+    const [historyRow] = await tx
+      .select({ id: paymentHistory.id })
+      .from(paymentHistory)
+      .where(
+        and(
+          eq(paymentHistory.paymentId, paymentId),
+          eq(paymentHistory.userId, userId),
+        ),
+      )
+      .limit(1);
+
+    if (historyRow) {
+      await tx
+        .update(paymentHistory)
+        .set({ status: 'completed', completedAt: paidAt })
+        .where(eq(paymentHistory.id, historyRow.id));
+    } else {
+      await tx.insert(paymentHistory).values({
+        userId,
+        groupId,
+        paymentId,
+        status: 'completed',
+        completedAt: paidAt,
+      });
+    }
 
     return {
       splitId,

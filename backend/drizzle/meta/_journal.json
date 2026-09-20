@@ -22,6 +22,13 @@
       "when": 1789933840524,
       "tag": "0002_late_lilith",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789935689351,
+      "tag": "0003_materialize_payments",
+      "breakpoints": true
     }
   ]
 }

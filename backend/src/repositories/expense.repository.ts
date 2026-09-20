@@ -1,6 +1,6 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '../db/db.js';
-import { expenseSplits, expenses, payments, users } from '../models/index.js';
+import { expenseSplits, expenses, paymentHistory, payments, users } from '../models/index.js';
 import type {
   CreateExpenseResult,
   ExpenseDetailResult,
@@ -35,6 +35,34 @@ export async function createWithSplits(
     }));
 
     const createdSplits = await tx.insert(expenseSplits).values(splitValues).returning();
+
+    const createdPayments = await tx
+      .insert(payments)
+      .values(
+        createdSplits.map((split, index) => ({
+          expenseId: expense.id,
+          userId: split.userId,
+          amount: assignedAmounts[index].toFixed(2),
+          status: 'pending',
+        })),
+      )
+      .returning({
+        id: payments.id,
+        userId: payments.userId,
+      });
+
+    const paymentIdByUser = new Map(
+      createdPayments.map((payment) => [payment.userId, payment.id]),
+    );
+
+    await tx.insert(paymentHistory).values(
+      createdSplits.map((split) => ({
+        userId: split.userId,
+        groupId,
+        paymentId: paymentIdByUser.get(split.userId)!,
+        status: 'pending',
+      })),
+    );
 
     return {
       expenseId: expense.id,

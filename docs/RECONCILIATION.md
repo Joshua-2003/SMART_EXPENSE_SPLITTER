@@ -149,6 +149,40 @@ truth. They are now canonical.
 - **Zero-history behavior**: a member with no splits qualifies as **Reliable**
   (neutral, not penalized); empty collections are returned for empty histories.
 
+### P3 — Payment lifecycle
+
+- **Decision**: every expense split creates **exactly one** `payments` row with
+  `status = 'pending'` and **exactly one** `payment_history` row with
+  `status = 'pending'` (linked via `payment_id`) when the expense is created.
+  Expense, splits, payments, and payment history are written in the **same
+  transaction** (`backend/src/repositories/expense.repository.ts`,
+  `createWithSplits`).
+- **States**:
+  - `pending` — the split's obligation exists and is not yet settled; it is
+    counted in balances, settlement counts, overdue queries, history, and the
+    `stillPending` reliability metric.
+  - `completed` — the obligation is settled. `payments.status = 'completed'`
+    with `paid_at` set, and the linked `payment_history` row is updated to
+    `'completed'` with `completed_at` in the same transaction as the payment
+    update (`backend/src/repositories/payment.repository.ts`,
+    `markPaymentCompleted`). There is **no** `pending→overdue` or reverse
+    transition endpoint; completion is one-way.
+  - `overdue` — a **derived** query state, not persisted: a `pending` split whose
+    expense `created_at` is older than the overdue threshold (policy P1). History
+    rows written as `'overdue'` exist only in seed data; the history endpoint maps
+    any non-`completed` history to `'pending'` per the API contract
+    (`status` enum is `completed|pending`).
+- **History integrity**: one payment history row per split keeps the lifecycle
+  linear (pending → completed) and prevents duplicate history on repeated
+  completion. `markPaymentCompleted` updates the existing history row instead of
+  inserting; splits that predate materialization (no payment/history rows) are
+  backfilled by migration `0003_materialize_payments` and still complete safely
+  via the insert fallback.
+- **Settled-obligation exclusion**: all balance/settlement/overdue queries
+  exclude a split once its payment is `completed` (see §3.3 query patterns and
+  the repository implementations), so a completed split no longer contributes to
+  owes, pending counts, or overdue amounts.
+
 ---
 
 ## 5. Verification — Completed statuses
@@ -159,12 +193,14 @@ evidence written for accountability:
 - **Source of truth**: `payments.status` (`'pending' | 'completed'`) and
   `payments.paid_at`. Completion is applied within a transaction in
   `backend/src/repositories/payment.repository.ts` (`markPaymentCompleted`),
-  which creates or updates the payment row and sets `paid_at`.
-- **Audit evidence**: a `payment_history` row with `status = 'completed'`,
-  `payment_id`, and `completed_at` is inserted in the **same transaction** as the
-  payment update. Balances, settlement, overdue, history, and reliability reads
-  derive `pending` from "no payment row or `payments.status = 'pending'`"
-  (left-join pattern).
+  which updates the materialized payment row and sets `paid_at` (falling back to
+  creating the row for legacy splits).
+- **Audit evidence**: the single `payment_history` row per split is updated to
+  `status = 'completed'` (with `payment_id` and `completed_at`) in the **same
+  transaction** as the payment update. Balances, settlement, overdue, history,
+  and reliability reads derive `pending` from `payments.status = 'pending'`
+  (left-join), and pending history rows now resolve their expense/split because
+  `payment_id` is set at creation.
 - **Consumer alignment**: dashboards, balances, settlement, overdue, history, and
   reliability all read from the `payments`/`payment_history` state, so a completed
   payment is reflected consistently after the atomic write.
@@ -182,6 +218,6 @@ evidence written for accountability:
 |---|---|---|
 | Implement `DELETE /groups/{groupId}` and `GET /groups/{groupId}/members` | HARD-007 | Explicitly deferred (decision D1) |
 | Schema constraints, indexes, views consistency | HARD-002 | Derived from HARD-001 (schema phase) |
-| Payment lifecycle materialization | HARD-004 | Derived from HARD-001 (pending/completed/overdue transitions) |
+| Payment lifecycle materialization | HARD-004 | Resolved — every split materializes a pending payment + pending history row at expense creation (Policy P3) |
 | Automated regression tests + verification gates | HARD-009 | Test-evidence gap (verification section) |
 | Manual / flexible expense splits | ADV-001 | Post-MVP delivery of decision D2 |

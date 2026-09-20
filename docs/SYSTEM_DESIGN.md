@@ -88,7 +88,7 @@ USER CREATES EXPENSE:
 4. Backend Route → Express receives and validates request
 5. Service Layer → Expense Service creates expense record
 6. Split Calculation → Calculate splits per member (equal or manual)
-7. Database Write → INSERT into Expenses, Expense_Splits tables
+7. Database Write → INSERT into Expenses, Expense_Splits tables, plus a materialized pending Payment and Payment_History record per split (all in one transaction)
 8. Response → Return created expense + splits to frontend
 9. Frontend Update → Redux updates state, UI reflects new expense
 10. Dashboard Refresh → Balance calculations trigger automatically

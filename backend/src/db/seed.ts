@@ -281,7 +281,7 @@ async function seed(): Promise<void> {
         await tx.insert(paymentHistory).values({
           userId,
           groupId,
-          paymentId: split.paid ? payment.id : null,
+          paymentId: payment.id,
           status: split.paid ? 'completed' : (split.historyStatus ?? 'pending'),
           createdAt: expenseRow.createdAt,
           completedAt: split.paid ? split.paidAt! : null,

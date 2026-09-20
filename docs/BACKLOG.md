@@ -57,7 +57,7 @@ This project delivers a group expense management system for friends, roommates, 
 | HARD-001 | PLATFORM | Phase 5 | P0 | Reconcile Contract and Backlog Coverage | M | Done |
 | HARD-002 | DATA | Phase 5 | P0 | Correct Schema Constraints, Indexes, and Views | M | Done |
 | HARD-003 | PAYMENT | Phase 5 | P0 | Enforce Group-Isolated, Idempotent Settlement | L | Done |
-| HARD-004 | PAYMENT | Phase 5 | P0 | Define and Materialize Payment Lifecycle | M | Not Started |
+| HARD-004 | PAYMENT | Phase 5 | P0 | Define and Materialize Payment Lifecycle | M | Done |
 | HARD-005 | AUTH | Phase 5 | P0 | Make Authentication Durable Across Reloads | M | Not Started |
 | HARD-006 | GROUP | Phase 5 | P0 | Protect Active Obligations During Member Changes | M | Not Started |
 | HARD-007 | GROUP | Phase 5 | P1 | Complete Group Delete and Member List Contract | M | Not Started |
@@ -961,9 +961,10 @@ Phase 5 is a required stabilization phase before treating the MVP as production-
 ### HARD-004: Define and Materialize Payment Lifecycle
 
 - **Priority:** P0
-- **Status:** Not Started
+- **Status:** Done (2026-09-21)
 - **Scope:** Decide whether every expense split creates a pending payment and history record at expense creation, then apply the selected lifecycle consistently across balances, overdue queries, history, and reliability.
 - **Acceptance criteria:** Every split has a deterministic status from creation through completion; pending/completed/overdue semantics are documented; settled obligations are excluded correctly; expense creation and initial payment materialization are transactional.
+- **Resolution:** The lifecycle is **materialized**: every expense split now creates exactly one `payments` row (`status='pending'`) and exactly one linked `payment_history` row (`status='pending'`) atomically inside the expense-creation transaction (`backend/src/repositories/expense.repository.ts` → `createWithSplits`). One-way `pending → completed`; `overdue` is a derived query state (pending split past the 7-day threshold), never persisted (documented as Policy P3 in `docs/RECONCILIATION.md`). `markPaymentCompleted` updates in place (never duplicates history) and stays idempotent with a stable `paidAt` (`backend/src/repositories/payment.repository.ts`). A data-backfill migration `0003_materialize_payments.sql` (plus journal entry and snapshot) materializes pending payments/history for legacy splits lacking them, and `seed.ts` links `payment_id` for all history rows. Also fixed a latent history-rendering bug: `COALESCE(expenses.id, '')` in `getMemberPaymentHistory` could not cast `''` to `uuid` and now casts via `::text`. Verified on a clean seed: build and migration pass; a lifecycle script confirmed creation materialization (one pending payment + history per split), in-place completion (single history row), idempotent repeat (stable `paidAt`), pending-history and personal-balance exclusion of settled obligations, and no duplicate history rows (21 checks passed).
 
 ### HARD-005: Make Authentication Durable Across Reloads
 

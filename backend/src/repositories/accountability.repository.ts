@@ -22,7 +22,7 @@ export async function getMemberPaymentHistory(
   const rows = await db
     .select({
       paymentHistoryId: paymentHistory.id,
-      expenseId: sql<string>`COALESCE(${expenses.id}, '')`,
+      expenseId: sql<string>`COALESCE(${expenses.id}::text, '')`,
       expenseDescription: sql<string>`COALESCE(${expenses.description}, '')`,
       assignedAmount: sql<string>`COALESCE(${expenseSplits.assignedAmount}, 0)`,
       status: sql<PaymentHistoryItem['status']>`CASE
