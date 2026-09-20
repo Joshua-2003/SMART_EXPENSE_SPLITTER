@@ -70,6 +70,20 @@ npm run db:push
 
 This pushes the current Drizzle schema to the configured Supabase PostgreSQL database and creates or updates the database tables. Use a reviewable migration workflow for production changes.
 
+## Reset and Seed the Database
+
+Wipe all table data and load demo data (users, groups, expenses, payments, history, notifications) matching the frontend mocks:
+
+```bash
+npm run db:seed
+```
+
+Every seeded user uses the shared demo password `password123` (e.g. `alex.rivera@example.com`). To wipe all data without inserting anything:
+
+```bash
+npm run db:reset
+```
+
 ## Run Development Server
 
 ```bash
@@ -95,6 +109,8 @@ The port can be changed with the `PORT` environment variable. The frontend Vite 
 | `npm run db:migrate` | Run Drizzle migrations |
 | `npm run db:push` | Push the schema to Supabase |
 | `npm run db:studio` | Open Drizzle Studio |
+| `npm run db:seed` | Wipe all data and load demo seed data |
+| `npm run db:reset` | Wipe all table data (no seed) |
 
 ## Project Structure
 
