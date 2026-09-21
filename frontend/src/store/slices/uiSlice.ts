@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { logout } from './authSlice';
 
 export interface ToastItem {
   id: string;
@@ -48,6 +49,9 @@ export const uiSlice = createSlice({
     setMobileSidebarOpen: (state, action: PayloadAction<boolean>) => {
       state.isMobileSidebarOpen = action.payload;
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(logout, () => initialState);
   },
 });
 

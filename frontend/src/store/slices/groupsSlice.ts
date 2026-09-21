@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Group, GroupMember } from '../../types';
 import { GroupSettlement } from '../../services/payment.service';
 import { mockGroups, defaultCurrentGroup, mockGroupMembers } from '../../mock/groups';
+import { logout } from './authSlice';
 
 interface GroupsState {
   groups: Group[];
@@ -112,6 +113,9 @@ export const groupsSlice = createSlice({
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(logout, () => initialState);
   },
 });
 

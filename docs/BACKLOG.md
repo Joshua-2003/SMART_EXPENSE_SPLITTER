@@ -58,7 +58,7 @@ This project delivers a group expense management system for friends, roommates, 
 | HARD-002 | DATA | Phase 5 | P0 | Correct Schema Constraints, Indexes, and Views | M | Done |
 | HARD-003 | PAYMENT | Phase 5 | P0 | Enforce Group-Isolated, Idempotent Settlement | L | Done |
 | HARD-004 | PAYMENT | Phase 5 | P0 | Define and Materialize Payment Lifecycle | M | Done |
-| HARD-005 | AUTH | Phase 5 | P0 | Make Authentication Durable Across Reloads | M | Not Started |
+| HARD-005 | AUTH | Phase 5 | P0 | Make Authentication Durable Across Reloads | M | Done |
 | HARD-006 | GROUP | Phase 5 | P0 | Protect Active Obligations During Member Changes | M | Not Started |
 | HARD-007 | GROUP | Phase 5 | P1 | Complete Group Delete and Member List Contract | M | Not Started |
 | HARD-008 | FRONTEND | Phase 5 | P1 | Remove Mock Fallbacks and Fix Live State Propagation | L | Not Started |
@@ -969,9 +969,10 @@ Phase 5 is a required stabilization phase before treating the MVP as production-
 ### HARD-005: Make Authentication Durable Across Reloads
 
 - **Priority:** P0
-- **Status:** Not Started
+- **Status:** Done (2026-09-21)
 - **Scope:** Restore authenticated sessions safely and clear credentials on logout. Initialize Axios authentication handling before protected data requests can run.
 - **Acceptance criteria:** A valid stored token hydrates the session and current user after reload; invalid tokens clear auth and route to login; logout removes the token and cached protected state; interceptors are ready before startup requests.
+- **Resolution:** Interceptors are now registered at module scope in `frontend/src/App.tsx` (before the first render) with an `onUnauthorized` callback that dispatches `logout`, so the bearer token is injected on the first request and any `401` clears the session. `authSlice` gained an `isHydrating` flag and a `setHydrated` action (initial `true`), and `ProtectedRoutes`/`PublicRoutes` render a shared `AppLoader` until hydration resolves. On startup `App` reads `smart_splitter_token` from `localStorage`: with no token it dispatches `setHydrated`; with a token it calls `GET /users/me` and dispatches `loginSuccess` with the authoritative profile (`userId`/`email`/`name`/`createdAt`), relying on the interceptor to clear an invalid/expired token. Logout now removes the stored token in `MainLayout.handleLogout`, and the `groups`, `expenses`, `dashboard`, `accountability`, and `ui` slices reset to their initial state on `auth/logout` via `extraReducers`, clearing cached protected state. Verified: frontend `npm run lint` (`tsc --noEmit`) and `npm run build` pass; against the running API, `GET /api/users/me` returns the profile for a valid seeded token and `401` for invalid or missing tokens. No backend, schema, or contract changes were required.
 
 ### HARD-006: Protect Active Obligations During Member Changes
 

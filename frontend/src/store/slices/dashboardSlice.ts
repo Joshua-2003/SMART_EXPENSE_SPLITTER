@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { DashboardData } from '../../types';
+import { logout } from './authSlice';
 
 interface DashboardState {
   data: DashboardData | null;
@@ -26,6 +27,9 @@ export const dashboardSlice = createSlice({
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(logout, () => initialState);
   },
 });
 

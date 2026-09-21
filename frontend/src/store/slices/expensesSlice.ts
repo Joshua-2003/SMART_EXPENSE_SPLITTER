@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Expense, ExpenseSplit } from '../../types';
 import { defaultExpenses } from '../../mock/expenses';
+import { logout } from './authSlice';
 
 interface ExpensesState {
   expenses: Expense[];
@@ -51,6 +52,9 @@ export const expensesSlice = createSlice({
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(logout, () => initialState);
   },
 });
 

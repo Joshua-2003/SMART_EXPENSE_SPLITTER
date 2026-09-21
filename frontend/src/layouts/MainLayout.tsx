@@ -174,6 +174,7 @@ export const MainLayout: React.FC = () => {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('smart_splitter_token');
     dispatch(logout());
     navigate(ROUTES.LOGIN);
   };

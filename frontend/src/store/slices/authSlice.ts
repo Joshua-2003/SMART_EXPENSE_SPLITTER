@@ -7,6 +7,7 @@ interface AuthState {
   allUsers: User[];
   session: AuthSession | null;
   isAuthenticated: boolean;
+  isHydrating: boolean;
   isLoading: boolean;
   error: string | null;
 }
@@ -16,6 +17,7 @@ const initialState: AuthState = {
   allUsers: mockUsers,
   session: null,
   isAuthenticated: false,
+  isHydrating: true,
   isLoading: false,
   error: null,
 };
@@ -54,11 +56,17 @@ export const authSlice = createSlice({
         expiresIn: action.payload.expiresIn,
       };
       state.isAuthenticated = true;
+      state.isHydrating = false;
       state.error = null;
+    },
+    setHydrated: (state) => {
+      state.isHydrating = false;
     },
     logout: (state) => {
       state.isAuthenticated = false;
+      state.isHydrating = false;
       state.session = null;
+      state.currentUser = defaultCurrentUser;
     },
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
@@ -69,6 +77,13 @@ export const authSlice = createSlice({
   },
 });
 
-export const { setCurrentUser, updateCurrentUser, loginSuccess, logout, setError, setLoading } =
-  authSlice.actions;
+export const {
+  setCurrentUser,
+  updateCurrentUser,
+  loginSuccess,
+  setHydrated,
+  logout,
+  setError,
+  setLoading,
+} = authSlice.actions;
 export default authSlice.reducer;

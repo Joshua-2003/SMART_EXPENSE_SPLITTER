@@ -7,6 +7,7 @@ import {
 import { GroupOverdueBalances } from '../../services/accountability.service';
 import { mockPaymentHistory, mockMemberReliability } from '../../mock/history';
 import { mockNotifications } from '../../mock/notifications';
+import { logout } from './authSlice';
 
 interface AccountabilityState {
   paymentHistory: PaymentHistoryRecord[];
@@ -68,6 +69,9 @@ export const accountabilitySlice = createSlice({
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(logout, () => initialState);
   },
 });
 
