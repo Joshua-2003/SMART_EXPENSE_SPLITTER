@@ -183,6 +183,36 @@ truth. They are now canonical.
   the repository implementations), so a completed split no longer contributes to
   owes, pending counts, or overdue amounts.
 
+### P4 — Member removal and open obligations
+
+- **Decision**: member removal is **blocked while the member has any open
+  obligation in the group**. This is the "block" branch of HARD-006; no archival
+  table exists in the MVP schema, and schema/archival work is out of scope here.
+- **Open obligation definition**: the member has at least one non-completed
+  expense split in the group where they are either the **debtor**
+  (`expense_splits.user_id = member` and `expenses.created_by <> member`) or the
+  **creditor** (`expenses.created_by = member` and `expense_splits.user_id <> member`),
+  and the linked `payments.status` is `NULL` or `<> 'completed'`. A member's own
+  split on an expense they created is excluded, matching the personal-balance
+  semantics. Implemented in
+  `backend/src/repositories/group.repository.ts` (`hasOpenObligations`).
+- **Response**: `DELETE /groups/{groupId}/members/{userId}` returns
+  `409 CONFLICT` (`"Member has unsettled obligations ... and cannot be removed"`)
+  when the target has open obligations
+  (`backend/src/services/group.service.ts`, `removeMember`).
+- **Existing rules preserved**: only a group admin may remove members (`403`
+  otherwise); an admin cannot remove themselves (`400 VALIDATION_ERROR`); a
+  missing group or member returns `404`. Non-admins cannot self-remove because
+  the endpoint is admin-only.
+- **Historical attribution**: removing a fully settled member deletes only the
+  `group_members` row. Their `expense_splits`, `payments`, and `payment_history`
+  rows remain (they reference `users`, not `group_members`), so historical
+  records stay attributable after removal.
+- **Surfacing**: the contract (`docs/API_CONTRACT.json`, `member-remove`), the
+  design doc (`docs/SYSTEM_DESIGN.md` §2.4.2), and the members UI
+  (`frontend/src/pages/members/MembersPage.tsx` confirmation + error toast)
+  reflect this policy.
+
 ---
 
 ## 5. Verification — Completed statuses

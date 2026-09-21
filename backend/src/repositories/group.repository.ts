@@ -1,6 +1,6 @@
 import { and, count, eq, sql } from 'drizzle-orm';
 import { db } from '../db/db.js';
-import { groups, groupMembers, users } from '../models/index.js';
+import { expenseSplits, expenses, groupMembers, groups, payments, users } from '../models/index.js';
 import type {
   AddMemberResult,
   CreateGroupResult,
@@ -217,4 +217,33 @@ export async function removeMember(
     .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)));
 
   return (result.rowCount ?? 0) > 0;
+}
+
+export async function hasOpenObligations(
+  groupId: string,
+  userId: string,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ openCount: sql<number>`count(*)::int` })
+    .from(expenseSplits)
+    .innerJoin(expenses, eq(expenses.id, expenseSplits.expenseId))
+    .leftJoin(
+      payments,
+      and(
+        eq(payments.expenseId, expenseSplits.expenseId),
+        eq(payments.userId, expenseSplits.userId),
+      ),
+    )
+    .where(
+      and(
+        eq(expenses.groupId, groupId),
+        sql`(${payments.status} IS NULL OR ${payments.status} <> 'completed')`,
+        sql`(
+          (${expenseSplits.userId} = ${userId} AND ${expenses.createdBy} <> ${userId})
+          OR (${expenses.createdBy} = ${userId} AND ${expenseSplits.userId} <> ${userId})
+        )`,
+      ),
+    );
+
+  return (row?.openCount ?? 0) > 0;
 }

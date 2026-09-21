@@ -471,6 +471,15 @@ Error Responses:
 - 401: Invalid or missing token
 - 403: User is not admin of this group
 - 404: Group or member not found
+- 409: Member has unsettled obligations in this group and cannot be removed
+
+> MEMBER REMOVAL POLICY: A member with any non-completed obligation in the
+> group (an expense split they owe or are owed) cannot be removed; the request
+> is rejected with `409 CONFLICT`. This prevents silently orphaning live splits,
+> payments, and payment history. Once every obligation is settled, removal is
+> allowed and the member's historical expense splits, payments, and payment
+> history remain attributable. Non-admins are rejected with `403`, and an admin
+> cannot remove themselves (`400 VALIDATION_ERROR`).
 ```
 
 #### **2.4.3 List Group Members**

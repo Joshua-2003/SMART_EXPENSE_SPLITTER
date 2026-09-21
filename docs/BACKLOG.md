@@ -59,7 +59,7 @@ This project delivers a group expense management system for friends, roommates, 
 | HARD-003 | PAYMENT | Phase 5 | P0 | Enforce Group-Isolated, Idempotent Settlement | L | Done |
 | HARD-004 | PAYMENT | Phase 5 | P0 | Define and Materialize Payment Lifecycle | M | Done |
 | HARD-005 | AUTH | Phase 5 | P0 | Make Authentication Durable Across Reloads | M | Done |
-| HARD-006 | GROUP | Phase 5 | P0 | Protect Active Obligations During Member Changes | M | Not Started |
+| HARD-006 | GROUP | Phase 5 | P0 | Protect Active Obligations During Member Changes | M | Done |
 | HARD-007 | GROUP | Phase 5 | P1 | Complete Group Delete and Member List Contract | M | Not Started |
 | HARD-008 | FRONTEND | Phase 5 | P1 | Remove Mock Fallbacks and Fix Live State Propagation | L | Not Started |
 | HARD-009 | QUALITY | Phase 5 | P1 | Add Regression Tests and Clean Verification Gates | L | Not Started |
@@ -977,9 +977,10 @@ Phase 5 is a required stabilization phase before treating the MVP as production-
 ### HARD-006: Protect Active Obligations During Member Changes
 
 - **Priority:** P0
-- **Status:** Not Started
+- **Status:** Done (2026-09-21)
 - **Scope:** Prevent member removal from silently orphaning expense splits, payments, and accountability records. Define behavior for members with open obligations.
 - **Acceptance criteria:** Removal is blocked for unsettled obligations or the documented settlement/archival policy is applied; historical records remain attributable; admin, self-removal, and non-admin rules are tested; the policy is reflected in the contract and UI.
+- **Resolution:** The **block** policy is implemented (the MVP schema has no archival table; schema work is owned elsewhere). `backend/src/repositories/group.repository.ts` gained `hasOpenObligations(groupId, userId)`, a group-scoped count of non-completed splits where the member is the debtor (`expense_splits.user_id = member AND expenses.created_by <> member`) or the creditor (`expenses.created_by = member AND expense_splits.user_id <> member`), with the payer's own split excluded to match the personal-balance semantics. `group.service.removeMember` now calls it after the existing checks and rejects with `409 CONFLICT` (`"Member has unsettled obligations ... and cannot be removed"`); the pre-existing rules remain: non-admin → `403`, admin self-removal → `400`, missing group/member → `404`. Removing a fully settled member deletes only the `group_members` row, so `expense_splits`, `payments`, and `payment_history` (which reference `users`) remain attributable. The policy is recorded canonically as Policy P4 in `docs/RECONCILIATION.md`, added to the `member-remove` contract entry in `docs/API_CONTRACT.json` (409 error + scope note), and documented in `docs/SYSTEM_DESIGN.md` §2.4.2. The frontend `removeGroupMember` service now unwraps the server envelope on rejection so the 409 reason reaches the toast, and the members page confirmation states the policy. Verified: backend `npm run build` (strict TS) and frontend `npm run lint` (`tsc --noEmit`) pass; live API smoke against the seeded database returned `409` for David (pending Baguio splits), `400` for admin self-removal, and `403` for a non-admin actor, and `204` for fully settled Mia with her historical splits/payments/history still present; the database was re-seeded afterward. Automated regression coverage remains tracked by HARD-009.
 
 ### HARD-007: Complete Group Delete and Member List Contract
 

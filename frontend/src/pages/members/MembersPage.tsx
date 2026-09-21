@@ -252,7 +252,7 @@ export const MembersPage: React.FC = () => {
         onClose={() => setMemberToRemove(null)}
         onConfirm={handleConfirmRemove}
         title="Remove Member from Group"
-        description={`Are you sure you want to remove ${memberToRemove?.name} from ${currentGroup.name}?`}
+        description={`Are you sure you want to remove ${memberToRemove?.name} from ${currentGroup.name}? Members with unsettled obligations cannot be removed until their balances are settled.`}
         confirmLabel="Remove Member"
         variant="danger"
       />

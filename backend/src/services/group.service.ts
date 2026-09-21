@@ -3,6 +3,7 @@ import {
   createWithAdmin,
   findById,
   findMembership,
+  hasOpenObligations,
   listForUser,
   removeMember as repoRemoveMember,
   update,
@@ -151,6 +152,15 @@ export async function removeMember(
   const targetMembership = await findMembership(groupId, targetUserId);
   if (!targetMembership) {
     throw new HttpError(404, 'NOT_FOUND', 'Member not found in this group');
+  }
+
+  const hasObligations = await hasOpenObligations(groupId, targetUserId);
+  if (hasObligations) {
+    throw new HttpError(
+      409,
+      'CONFLICT',
+      'Member has unsettled obligations in this group and cannot be removed',
+    );
   }
 
   const removed = await repoRemoveMember(groupId, targetUserId);

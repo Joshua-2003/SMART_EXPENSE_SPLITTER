@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import apiClient from './axios';
 import type { ApiResponseError, ApiResponseSuccess } from '../types/api';
 import type {
@@ -175,13 +176,23 @@ export async function removeGroupMember(
   groupId: string,
   userId: string,
 ): Promise<void> {
-  const response = await apiClient.delete<
-    ApiResponseSuccess<null> | ApiResponseError
-  >(`/groups/${groupId}/members/${userId}`);
+  try {
+    const response = await apiClient.delete<
+      ApiResponseSuccess<null> | ApiResponseError
+    >(`/groups/${groupId}/members/${userId}`);
 
-  const body = response.data;
+    const body = response.data;
 
-  if (body && 'status' in body && body.status === 'error') {
-    throw new Error(body.message);
+    if (body && 'status' in body && body.status === 'error') {
+      throw new Error(body.message);
+    }
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.data) {
+      const body = error.response.data as ApiResponseError;
+      if (body?.message) {
+        throw new Error(body.message);
+      }
+    }
+    throw error;
   }
 }

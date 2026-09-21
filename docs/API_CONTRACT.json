@@ -342,10 +342,14 @@
       "responseBody": {
         "statusCode": 204
       },
+      "scope": {
+        "note": "Removal is blocked with 409 when the member has unsettled obligations in the group (any non-completed expense split they owe or are owed). Fully settled members may be removed; their historical splits, payments, and payment history remain attributable. Admin self-removal is rejected with 400; non-admins are rejected with 403."
+      },
       "errors": [
         { "code": 401, "message": "Invalid or missing token" },
         { "code": 403, "message": "User is not admin of this group" },
-        { "code": 404, "message": "Group or member not found" }
+        { "code": 404, "message": "Group or member not found" },
+        { "code": 409, "message": "Member has unsettled obligations and cannot be removed" }
       ]
     },
     {
