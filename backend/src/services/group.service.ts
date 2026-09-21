@@ -1,10 +1,12 @@
 import {
   addMember as repoAddMember,
   createWithAdmin,
+  deleteGroup as repoDeleteGroup,
   findById,
   findMembership,
   hasOpenObligations,
   listForUser,
+  listMembersWithBalances,
   removeMember as repoRemoveMember,
   update,
 } from '../repositories/group.repository.js';
@@ -17,6 +19,7 @@ import type {
   GroupDetailsResult,
   ListGroupsInput,
   ListGroupsResult,
+  ListGroupMembersResult,
   UpdateGroupInput,
   UpdateGroupResult,
 } from '../types/group.js';
@@ -166,5 +169,43 @@ export async function removeMember(
   const removed = await repoRemoveMember(groupId, targetUserId);
   if (!removed) {
     throw new HttpError(404, 'NOT_FOUND', 'Member not found in this group');
+  }
+}
+
+export async function listGroupMembers(
+  actorUserId: string,
+  groupId: string,
+): Promise<ListGroupMembersResult> {
+  const group = await findById(groupId);
+  if (!group) {
+    throw new HttpError(404, 'NOT_FOUND', 'Group not found');
+  }
+
+  const membership = await findMembership(groupId, actorUserId);
+  if (!membership) {
+    throw new HttpError(403, 'FORBIDDEN', 'User is not a member of this group');
+  }
+
+  return {
+    members: await listMembersWithBalances(groupId),
+  };
+}
+
+export async function deleteGroup(
+  actorUserId: string,
+  groupId: string,
+): Promise<void> {
+  const group = await findById(groupId);
+  if (!group) {
+    throw new HttpError(404, 'NOT_FOUND', 'Group not found');
+  }
+
+  if (group.adminId !== actorUserId) {
+    throw new HttpError(403, 'FORBIDDEN', 'User is not admin of this group');
+  }
+
+  const deleted = await repoDeleteGroup(groupId);
+  if (!deleted) {
+    throw new HttpError(404, 'NOT_FOUND', 'Group not found');
   }
 }

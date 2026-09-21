@@ -97,6 +97,16 @@ export const groupsSlice = createSlice({
       const g = state.groups.find((grp) => grp.id === state.currentGroup.id);
       if (g) g.memberCount = state.members.length;
     },
+    removeGroup: (state, action: PayloadAction<string>) => {
+      state.groups = state.groups.filter((g) => g.id !== action.payload);
+      if (state.currentGroup.id === action.payload) {
+        const next = state.groups[0];
+        if (next) {
+          state.currentGroup = next;
+          state.members = [];
+        }
+      }
+    },
     updateMemberBalances: (state, action: PayloadAction<Record<string, number>>) => {
       state.members.forEach((m) => {
         if (action.payload[m.userId] !== undefined) {
@@ -128,6 +138,7 @@ export const {
   updateGroupDetails,
   addMember,
   removeMember,
+  removeGroup,
   updateMemberBalances,
   setGroupSettlement,
   setLoading,

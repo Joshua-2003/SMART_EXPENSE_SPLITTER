@@ -62,6 +62,15 @@ export interface GroupMemberApiItem {
   joinedAt: string;
 }
 
+export interface GroupMemberBalanceApiItem {
+  userId: string;
+  name: string;
+  email: string;
+  role: MemberRole;
+  balance: number;
+  joinedAt: string;
+}
+
 export interface GroupDetailsApiResult {
   groupId: string;
   name: string;

@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Users, ChevronRight, Edit2, FolderKanban } from 'lucide-react';
+import { Plus, Users, ChevronRight, Edit2, FolderKanban, Trash2 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
   setCurrentGroup,
+  removeGroup,
   updateGroupDetails,
 } from '../../store/slices/groupsSlice';
 import { setCreateGroupOpen, addToast } from '../../store/slices/uiSlice';
-import { updateGroupDetails as updateGroupDetailsApi } from '../../services/group.service';
+import {
+  deleteGroup as deleteGroupApi,
+  updateGroupDetails as updateGroupDetailsApi,
+} from '../../services/group.service';
 import { Group } from '../../types';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
+import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { ROUTES } from '../../constants/routes';
 
 export const GroupsPage: React.FC = () => {
@@ -26,6 +31,9 @@ export const GroupsPage: React.FC = () => {
   const [editDesc, setEditDesc] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+
+  const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleSelectGroup = (g: Group) => {
     dispatch(setCurrentGroup(g));
@@ -45,6 +53,39 @@ export const GroupsPage: React.FC = () => {
     setEditName(g.name);
     setEditDesc(g.description || '');
     setEditError(null);
+  };
+
+  const handleStartDelete = (e: React.MouseEvent, g: Group) => {
+    e.stopPropagation();
+    setGroupToDelete(g);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!groupToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteGroupApi(groupToDelete.id);
+      dispatch(removeGroup(groupToDelete.id));
+      dispatch(
+        addToast({
+          type: 'success',
+          title: 'Group Deleted',
+          message: `${groupToDelete.name} and all of its data have been permanently deleted.`,
+        })
+      );
+      setGroupToDelete(null);
+    } catch (err) {
+      dispatch(
+        addToast({
+          type: 'error',
+          title: 'Delete Failed',
+          message: err instanceof Error ? err.message : 'Failed to delete group.',
+        })
+      );
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -176,6 +217,16 @@ export const GroupsPage: React.FC = () => {
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                     )}
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleStartDelete(e, group)}
+                        className="p-1 text-slate-400 hover:text-rose-600 rounded-md hover:bg-rose-50"
+                        title="Delete group"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     {isActive && (
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
                         Active
@@ -249,6 +300,18 @@ export const GroupsPage: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Delete Group Confirmation */}
+      <ConfirmationModal
+        isOpen={!!groupToDelete}
+        onClose={() => !isDeleting && setGroupToDelete(null)}
+        onConfirm={() => void handleConfirmDelete()}
+        title="Delete Group Permanently"
+        description={`Are you sure you want to delete ${groupToDelete?.name}? This permanently removes the group, its memberships, expenses, splits, payments, payment history, and notifications. This action cannot be undone.`}
+        confirmLabel="Delete Group"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

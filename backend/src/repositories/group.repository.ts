@@ -7,6 +7,7 @@ import type {
   GroupDetailsResult,
   GroupListItem,
   GroupMemberItem,
+  MemberListItem,
   UpdateGroupResult,
 } from '../types/group.js';
 
@@ -149,6 +150,67 @@ export async function listMembers(groupId: string): Promise<GroupMemberItem[]> {
     ...row,
     role: row.role as 'admin' | 'member',
   }));
+}
+
+export async function listMembersWithBalances(groupId: string): Promise<MemberListItem[]> {
+  const rows = await db
+    .select({
+      userId: users.id,
+      name: users.name,
+      email: users.email,
+      role: groupMembers.role,
+      balance: sql<number>`COALESCE(
+        SUM(
+          CASE
+            WHEN ${expenseSplits.userId} = ${users.id}
+              AND ${expenses.createdBy} <> ${users.id}
+              AND (${payments.status} IS NULL OR ${payments.status} = 'pending')
+            THEN CAST(${expenseSplits.assignedAmount} AS NUMERIC)
+            ELSE 0
+          END
+        ), 0
+      )::float - COALESCE(
+        SUM(
+          CASE
+            WHEN ${expenseSplits.userId} <> ${users.id}
+              AND ${expenses.createdBy} = ${users.id}
+              AND (${payments.status} IS NULL OR ${payments.status} = 'pending')
+            THEN CAST(${expenseSplits.assignedAmount} AS NUMERIC)
+            ELSE 0
+          END
+        ), 0
+      )::float`,
+      joinedAt: groupMembers.joinedAt,
+    })
+    .from(groupMembers)
+    .innerJoin(users, eq(users.id, groupMembers.userId))
+    .leftJoin(expenseSplits, eq(expenseSplits.userId, users.id))
+    .leftJoin(
+      expenses,
+      and(eq(expenses.id, expenseSplits.expenseId), eq(expenses.groupId, groupId)),
+    )
+    .leftJoin(
+      payments,
+      and(eq(payments.expenseId, expenseSplits.expenseId), eq(payments.userId, expenseSplits.userId)),
+    )
+    .where(eq(groupMembers.groupId, groupId))
+    .groupBy(users.id, users.name, users.email, groupMembers.role, groupMembers.joinedAt)
+    .orderBy(sql`${groupMembers.joinedAt} ASC`);
+
+  return rows.map((row) => ({
+    userId: row.userId,
+    name: row.name,
+    email: row.email,
+    role: row.role as 'admin' | 'member',
+    balance: Number(row.balance ?? 0),
+    joinedAt: row.joinedAt,
+  }));
+}
+
+export async function deleteGroup(groupId: string): Promise<boolean> {
+  const result = await db.delete(groups).where(eq(groups.id, groupId));
+
+  return (result.rowCount ?? 0) > 0;
 }
 
 export async function update(

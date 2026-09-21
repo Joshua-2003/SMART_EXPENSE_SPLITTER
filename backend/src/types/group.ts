@@ -41,6 +41,19 @@ export interface GroupMemberItem {
   joinedAt: Date;
 }
 
+export interface MemberListItem {
+  userId: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'member';
+  balance: number;
+  joinedAt: Date;
+}
+
+export interface ListGroupMembersResult {
+  members: MemberListItem[];
+}
+
 export interface GroupDetailsResult {
   groupId: string;
   name: string;

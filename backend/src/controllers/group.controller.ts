@@ -189,3 +189,54 @@ export async function removeMember(
     next(error);
   }
 }
+
+export async function listMembers(
+  req: Request<{ groupId: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const actorId = req.user?.userId;
+    if (!actorId) {
+      throw new Error('Authenticated request is missing a user');
+    }
+
+    const result = await groupService.listGroupMembers(actorId, req.params.groupId);
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        members: result.members.map((member) => ({
+          userId: member.userId,
+          name: member.name,
+          email: member.email,
+          role: member.role,
+          balance: member.balance,
+          joinedAt: member.joinedAt.toISOString(),
+        })),
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteGroup(
+  req: Request<{ groupId: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const actorId = req.user?.userId;
+    if (!actorId) {
+      throw new Error('Authenticated request is missing a user');
+    }
+
+    await groupService.deleteGroup(actorId, req.params.groupId);
+
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+}

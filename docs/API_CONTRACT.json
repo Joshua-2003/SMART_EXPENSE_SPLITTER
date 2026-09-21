@@ -285,10 +285,10 @@
       "summary": "Delete a group and all associated data (admin only)",
       "authentication": true,
       "delivery": {
-        "status": "DEFERRED",
-        "trackedBy": "HARD-007",
-        "note": "Endpoint is MVP contract scope; implementation is explicitly deferred to HARD-007 (Phase 5). Not registered today."
-      },
+     "status": "IMPLEMENTED",
+     "trackedBy": "HARD-007",
+     "note": "Implemented by HARD-007 (Phase 5). DELETE is admin-only (204); GET is member-only (200) and returns group-scoped member balances."
+   },
       "pathParameters": {
         "groupId": { "type": "UUID", "required": true }
       },
@@ -359,10 +359,10 @@
       "summary": "Get all members of a group with current balances",
       "authentication": true,
       "delivery": {
-        "status": "DEFERRED",
-        "trackedBy": "HARD-007",
-        "note": "Endpoint is MVP contract scope; implementation is explicitly deferred to HARD-007 (Phase 5). Not registered today."
-      },
+     "status": "IMPLEMENTED",
+     "trackedBy": "HARD-007",
+     "note": "Implemented by HARD-007 (Phase 5). DELETE is admin-only (204); GET is member-only (200) and returns group-scoped member balances."
+   },
       "pathParameters": {
         "groupId": { "type": "UUID", "required": true }
       },

@@ -60,7 +60,7 @@ This project delivers a group expense management system for friends, roommates, 
 | HARD-004 | PAYMENT | Phase 5 | P0 | Define and Materialize Payment Lifecycle | M | Done |
 | HARD-005 | AUTH | Phase 5 | P0 | Make Authentication Durable Across Reloads | M | Done |
 | HARD-006 | GROUP | Phase 5 | P0 | Protect Active Obligations During Member Changes | M | Done |
-| HARD-007 | GROUP | Phase 5 | P1 | Complete Group Delete and Member List Contract | M | Not Started |
+| HARD-007 | GROUP | Phase 5 | P1 | Complete Group Delete and Member List Contract | M | Done |
 | HARD-008 | FRONTEND | Phase 5 | P1 | Remove Mock Fallbacks and Fix Live State Propagation | L | Not Started |
 | HARD-009 | QUALITY | Phase 5 | P1 | Add Regression Tests and Clean Verification Gates | L | Not Started |
 | PROD-001 | EMAIL | Phase 6 | P0 | Add Email Verification and Password Recovery | M | Not Started |
@@ -940,7 +940,7 @@ Phase 5 is a required stabilization phase before treating the MVP as production-
 - **Status:** Done (2026-09-21)
 - **Scope:** Reconcile the API contract, PRD, schema, implementation, and backlog so every documented endpoint has an explicit delivery decision. Resolve the manual-split MVP mismatch and document overdue and reliability policies.
 - **Acceptance criteria:** `DELETE /groups/{groupId}` and `GET /groups/{groupId}/members` are implemented and tested or explicitly deferred everywhere; manual splits have one consistent scope; overdue threshold, due-date behavior, reliability thresholds, zero-history behavior, and score formula are documented; completed statuses are verified against source and test evidence.
-- **Resolution:** See `docs/RECONCILIATION.md` for the endpoint delivery matrix and decision records. `DELETE /groups/{groupId}` and `GET /groups/{groupId}/members` are explicitly deferred to HARD-007; manual splits are resolved to equal-only MVP (backend already rejects `manual`) with delivery tracked by ADV-001; overdue (7-day threshold, due-date from expense `created_at`) and reliability (90/50 thresholds, zero-history = Reliable, score = completionRate) policies are documented; completed statuses are verified against `payments`/`payment_history` source and the automated test-evidence gap is tracked by HARD-009.
+- **Resolution:** See `docs/RECONCILIATION.md` for the endpoint delivery matrix and decision records. `DELETE /groups/{groupId}` and `GET /groups/{groupId}/members` were explicitly deferred to HARD-007 (implemented — see HARD-007, Done 2026-09-22); manual splits are resolved to equal-only MVP (backend already rejects `manual`) with delivery tracked by ADV-001; overdue (7-day threshold, due-date from expense `created_at`) and reliability (90/50 thresholds, zero-history = Reliable, score = completionRate) policies are documented; completed statuses are verified against `payments`/`payment_history` source and the automated test-evidence gap is tracked by HARD-009.
 
 ### HARD-002: Correct Schema Constraints, Indexes, and Views
 
@@ -985,9 +985,10 @@ Phase 5 is a required stabilization phase before treating the MVP as production-
 ### HARD-007: Complete Group Delete and Member List Contract
 
 - **Priority:** P1
-- **Status:** Not Started
+- **Status:** Done (2026-09-22)
 - **Scope:** Close the contract gap for group deletion and the member list endpoint, including authorization, cascade behavior, and balance payloads.
 - **Acceptance criteria:** Both endpoints are registered, protected, and return documented payloads; deletion is admin-only and cascade behavior is verified; member listing is group-scoped and returns correct balances; frontend actions match the contract.
+- **Resolution:** Backend — `backend/src/routes/group.routes.ts` registers `GET /:groupId/members` and `DELETE /:groupId` (authenticated, `isUUID` param). `backend/src/controllers/group.controller.ts` adds `listMembers` (200 envelope) and `deleteGroup` (204). `backend/src/services/group.service.ts` adds `listGroupMembers(actorUserId, groupId)` and `deleteGroup(actorUserId, groupId)`; `backend/src/repositories/group.repository.ts` adds `listMembersWithBalances(groupId)` (net = totalOwes − totalReceives over non-completed splits, ordered by `joinedAt` ASC) and `deleteGroup(groupId)` (row-count-based 404). Deletion is admin-only (403 for non-admin or non-member) and relies on the existing `ON DELETE CASCADE` foreign keys covering `group_members`, `expenses → expense_splits → payments`, `payment_history`, and `notifications`. Frontend — `listGroupMembers`/`deleteGroup` in `frontend/src/services/group.service.ts`, `removeGroup` reducer in `frontend/src/store/slices/groupsSlice.ts`, `MainLayout` populates member balances from `listGroupMembers`, and `GroupsPage` adds an admin-only delete action behind a danger `ConfirmationModal`. Verified live: member-list balances match `/settlement` for Baguio and Gala; 401/403/404 paths all correct; admin delete returned 204 and post-delete DB counts confirmed the cascade (groups/group_members/expenses/expense_splits/payments/payment_history/notifications all 0) with subsequent GETs returning 404; the database was re-seeded afterward (`npm run db:reset` + `npm run db:seed`). `npm run build` passes on both backend (strict TS) and frontend.
 
 ### HARD-008: Remove Mock Fallbacks and Fix Live State Propagation
 

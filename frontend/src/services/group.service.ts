@@ -8,6 +8,7 @@ import type {
   CreateGroupResult,
   GroupDetailsApiResult,
   GroupListItem,
+  GroupMemberBalanceApiItem,
   ListGroupsResult,
   UpdateGroupPayload,
   UpdateGroupResult,
@@ -124,6 +125,32 @@ export async function getGroupDetails(groupId: string): Promise<GroupDetailsResu
   };
 }
 
+interface ListGroupMembersResponseData {
+  members: GroupMemberBalanceApiItem[];
+}
+
+export async function listGroupMembers(groupId: string): Promise<GroupMember[]> {
+  const response = await apiClient.get<
+    ApiResponseSuccess<ListGroupMembersResponseData> | ApiResponseError
+  >(`/groups/${groupId}/members`);
+
+  const body = response.data;
+
+  if (body.status === 'error') {
+    throw new Error(body.message);
+  }
+
+  return body.data.members.map((member) => ({
+    groupId,
+    userId: member.userId,
+    name: member.name,
+    email: member.email,
+    role: member.role,
+    balance: member.balance,
+    joinedAt: member.joinedAt,
+  }));
+}
+
 export async function getGroupBalance(groupId: string): Promise<PersonalBalanceResult> {
   const response = await apiClient.get<ApiResponseSuccess<PersonalBalanceResult> | ApiResponseError>(
     `/groups/${groupId}/balance`,
@@ -180,6 +207,28 @@ export async function removeGroupMember(
     const response = await apiClient.delete<
       ApiResponseSuccess<null> | ApiResponseError
     >(`/groups/${groupId}/members/${userId}`);
+
+    const body = response.data;
+
+    if (body && 'status' in body && body.status === 'error') {
+      throw new Error(body.message);
+    }
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.data) {
+      const body = error.response.data as ApiResponseError;
+      if (body?.message) {
+        throw new Error(body.message);
+      }
+    }
+    throw error;
+  }
+}
+
+export async function deleteGroup(groupId: string): Promise<void> {
+  try {
+    const response = await apiClient.delete<
+      ApiResponseSuccess<null> | ApiResponseError
+    >(`/groups/${groupId}`);
 
     const body = response.data;
 

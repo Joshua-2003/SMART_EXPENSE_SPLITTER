@@ -42,10 +42,10 @@ Legend:
 | group-list | `GET /groups` | Implemented | `backend/src/routes/group.routes.ts` |
 | group-get | `GET /groups/{groupId}` | Implemented | `backend/src/routes/group.routes.ts` |
 | group-update | `PATCH /groups/{groupId}` | Implemented | `backend/src/routes/group.routes.ts` |
-| **group-delete** | `DELETE /groups/{groupId}` | **Deferred** | **HARD-007** — no route/controller/service/repository exists today |
+| **group-delete** | `DELETE /groups/{groupId}` | Implemented | HARD-007 — `backend/src/routes/group.routes.ts`, `group.controller.ts` / `group.service.ts` / `group.repository.ts`; admin-only, 204, cascades via FK `ON DELETE CASCADE` |
 | member-add | `POST /groups/{groupId}/members` | Implemented | `backend/src/routes/group.routes.ts` |
 | member-remove | `DELETE /groups/{groupId}/members/{userId}` | Implemented | `backend/src/routes/group.routes.ts` |
-| **member-list** | `GET /groups/{groupId}/members` | **Deferred** | **HARD-007** — no route exists today; member data currently surfaces through `group-get`, `settlement`, and `dashboard` |
+| **member-list** | `GET /groups/{groupId}/members` | Implemented | HARD-007 — `backend/src/routes/group.routes.ts`, `group.controller.ts` / `group.service.ts` / `group.repository.ts`; group-scoped, member-only, balances match `/settlement` |
 | expense-create | `POST /groups/{groupId}/expenses` | Implemented (equal only) | `backend/src/routes/group.routes.ts`, `expense.service.ts` (manual rejected) |
 | expense-list | `GET /groups/{groupId}/expenses` | Implemented | `backend/src/routes/group.routes.ts` |
 | expense-get | `GET /groups/{groupId}/expenses/{expenseId}` | Implemented | `backend/src/routes/group.routes.ts` |
@@ -77,11 +77,11 @@ decision and **defers both endpoints to HARD-007** (Complete Group Delete and
 Member List Contract), per the dependency graph `HARD-001 -> HARD-007`.
 
 Implications:
-- The endpoints are **not** implemented today; no route, controller, service, or
-  repository exists for them.
-- The frontend does not call them and does not present mock fallback data for them
-  (member data shown today comes from `group-get`, `settlement`, and `dashboard`).
-- HARD-007 will implement both endpoints, protect them, and align the frontend.
+- Both endpoints were implemented by **HARD-007** (Done 2026-09-22) and are now
+  registered, protected (admin-only for delete, member-only for listing), and
+  verified against the live database; see the matrix above.
+- The frontend now consumes `GET /groups/{groupId}/members` for authoritative
+  member balances and exposes an admin-only group delete action.
 
 ### D2 — Manual expense splits are out of MVP; equal split is the only MVP scope
 
@@ -246,7 +246,7 @@ evidence written for accountability:
 
 | Item | Backlog ID | Why it is out of scope here |
 |---|---|---|
-| Implement `DELETE /groups/{groupId}` and `GET /groups/{groupId}/members` | HARD-007 | Explicitly deferred (decision D1) |
+| Implement `DELETE /groups/{groupId}` and `GET /groups/{groupId}/members` | HARD-007 | Done — implemented in HARD-007 (2026-09-22); see endpoint matrix and HARD-007 resolution |
 | Schema constraints, indexes, views consistency | HARD-002 | Derived from HARD-001 (schema phase) |
 | Payment lifecycle materialization | HARD-004 | Resolved — every split materializes a pending payment + pending history row at expense creation (Policy P3) |
 | Automated regression tests + verification gates | HARD-009 | Test-evidence gap (verification section) |

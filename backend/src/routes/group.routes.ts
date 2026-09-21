@@ -5,8 +5,10 @@ import type { RequestHandler } from 'express';
 import {
   addMember,
   createGroup,
+  deleteGroup,
   getGroupDetails,
   listGroups,
+  listMembers,
   removeMember,
   updateGroup,
 } from '../controllers/group.controller.js';
@@ -100,6 +102,14 @@ groupRouter.patch(
   updateGroup,
 );
 
+groupRouter.delete(
+  '/:groupId',
+  authenticate,
+  [param('groupId').isUUID().withMessage('Invalid group id')],
+  validate(),
+  deleteGroup,
+);
+
 groupRouter.post(
   '/:groupId/members',
   authenticate,
@@ -112,6 +122,14 @@ groupRouter.post(
   ],
   validate(),
   addMember,
+);
+
+groupRouter.get(
+  '/:groupId/members',
+  authenticate,
+  [param('groupId').isUUID().withMessage('Invalid group id')],
+  validate(),
+  listMembers,
 );
 
 groupRouter.delete(

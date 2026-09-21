@@ -45,7 +45,7 @@ import { CreateExpenseModal } from '../components/expenses/CreateExpenseModal';
 import { CreateGroupModal } from '../components/groups/CreateGroupModal';
 import { AddMemberModal } from '../components/members/AddMemberModal';
 import { ToastContainer } from '../components/common/Toast';
-import { getGroupBalance, getGroupDetails, listGroups } from '../services/group.service';
+import { getGroupBalance, getGroupDetails, listGroupMembers, listGroups } from '../services/group.service';
 import { getGroupSettlement } from '../services/payment.service';
 import { getNotifications, markNotificationAsRead } from '../services/notification.service';
 import { Group, User } from '../types';
@@ -109,7 +109,8 @@ export const MainLayout: React.FC = () => {
     const loadGroupDetails = async () => {
       try {
         const details = await getGroupDetails(currentGroup.id);
-        dispatch(setGroupDetails(details));
+        const members = await listGroupMembers(currentGroup.id);
+        dispatch(setGroupDetails({ group: details.group, members }));
 
         const balance = await getGroupBalance(currentGroup.id);
         dispatch(
